@@ -1,0 +1,17 @@
+[Unit]
+Description=Nhau app - user activity simulator (test)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/simulate-test
+ExecStart=/usr/bin/python3 /root/simulate-test/simulate.py --config /root/simulate-test/config.json
+Restart=always
+RestartSec=15
+# Nếu crash liên tục >5 lần trong 60s thì dừng hẳn (tránh loop lỗi vô hạn spam log)
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target
