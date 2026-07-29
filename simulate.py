@@ -721,11 +721,7 @@ def action_finding_keo(api, cfg, user: TestUser, state: SharedState):
     jitter = cfg["coord_jitter_deg"]
     lat = center["lat"] + random.uniform(-jitter, jitter)
     lng = center["lng"] + random.uniform(-jitter, jitter)
-    district = random.choices(
-        list(cfg["district_weights"].keys()),
-        weights=list(cfg["district_weights"].values()),
-        k=1
-    )[0]
+    district = random.choice(cfg["districts"])
     option = random.choice(cfg["finding_options"])
     activity = random.choice(cfg["activity_types"])
 
