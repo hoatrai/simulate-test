@@ -349,8 +349,137 @@
   "seed_invite_ids": [],
   "_comment_districts": "Tạm giới hạn chỉ Quận 7 để test tập trung 1 khu vực trước. Muốn mở rộng lại thì thêm quận khác vào mảng này.",
   "districts": [
-    "Quận 7"
+    "Quận 1",
+    "Quận 3",
+    "Quận 4",
+    "Quận 5",
+    "Quận 6",
+    "Quận 7",
+    "Quận 8",
+    "Quận 10",
+    "Quận 11",
+    "Quận 12",
+    "Bình Thạnh",
+    "Phú Nhuận",
+    "Tân Bình",
+    "Tân Phú",
+    "Bình Tân",
+    "Gò Vấp",
+    "TP Thủ Đức",
+    "Nhà Bè",
+    "Bình Chánh",
+    "Hóc Môn",
+    "Củ Chi",
+    "Cần Giờ"
   ],
+  "district_coordinates": {
+    "Quận 1": {
+      "lat": 10.7769,
+      "lng": 106.7009
+    },
+    "Quận 3": {
+      "lat": 10.7826,
+      "lng": 106.6826
+    },
+    "Quận 4": {
+      "lat": 10.7578,
+      "lng": 106.7015
+    },
+    "Quận 5": {
+      "lat": 10.7540,
+      "lng": 106.6635
+    },
+    "Quận 6": {
+      "lat": 10.7468,
+      "lng": 106.6347
+    },
+    "Quận 7": {
+      "lat": 10.7378,
+      "lng": 106.7010
+    },
+    "Quận 8": {
+      "lat": 10.7241,
+      "lng": 106.6287
+    },
+    "Quận 10": {
+      "lat": 10.7722,
+      "lng": 106.6665
+    },
+    "Quận 11": {
+      "lat": 10.7630,
+      "lng": 106.6440
+    },
+    "Quận 12": {
+      "lat": 10.8672,
+      "lng": 106.6504
+    },
+    "Bình Thạnh": {
+      "lat": 10.8015,
+      "lng": 106.7100
+    },
+    "Phú Nhuận": {
+      "lat": 10.7992,
+      "lng": 106.6827
+    },
+    "Tân Bình": {
+      "lat": 10.8010,
+      "lng": 106.6520
+    },
+    "Tân Phú": {
+      "lat": 10.7900,
+      "lng": 106.6280
+    },
+    "Bình Tân": {
+      "lat": 10.7650,
+      "lng": 106.6030
+    },
+    "Gò Vấp": {
+      "lat": 10.8380,
+      "lng": 106.6650
+    },
+    "TP Thủ Đức": {
+      "lat": 10.8500,
+      "lng": 106.7700
+    },
+    "Nhà Bè": {
+      "lat": 10.6950,
+      "lng": 106.7300
+    },
+    "Bình Chánh": {
+      "lat": 10.6900,
+      "lng": 106.5600
+    },
+    "Hóc Môn": {
+      "lat": 10.8850,
+      "lng": 106.5950
+    },
+    "Củ Chi": {
+      "lat": 11.0050,
+      "lng": 106.4930
+    },
+    "Cần Giờ": {
+      "lat": 10.4100,
+      "lng": 106.9500
+    }
+  },
+  "district_weights": {
+    "Quận 1": 20,
+    "Quận 3": 15,
+    "Bình Thạnh": 20,
+    "Phú Nhuận": 15,
+    "Tân Bình": 15,
+    "TP Thủ Đức": 20,
+    "Quận 7": 20,
+    "Quận 10": 10,
+    "Gò Vấp": 10,
+    "Bình Tân": 5,
+    "Quận 12": 5,
+    "Nhà Bè": 3,
+    "Bình Chánh": 3,
+    "Hóc Môn": 2,
+    "Củ Chi": 1,
+    "Cần Giờ": 1
+  },
   "_comment_activity_types": "4 category thật của 'Loại kèo', lấy đúng từ functions.php (dòng ~6005/6023): Bar/Pub, Karaoke, Nhậu, Beer club.",
   "activity_types": [
     "Bar/Pub",
@@ -405,10 +534,10 @@
   "delay_seconds_max": 6,
   "_comment_center": "Toạ độ trung tâm Quận 7 (Phú Mỹ Hưng khu vực), bán kính jitter thu hẹp lại cho tọa độ random rơi đúng trong phạm vi Q7 thay vì lan ra cả TP.",
   "hcmc_center": {
-    "lat": 10.7411,
-    "lng": 106.7186
+    "lat": 10.7769,
+    "lng": 106.7009
   },
-  "coord_jitter_deg": 0.02,
+  "coord_jitter_deg": 0.10,
   "log_file": "simulate_log.txt",
 
   "_comment_map_presence": "🆕 Tính năng hiện user 'xung quanh' trên map (flutter_map.dart) KHÁC hẳn finding-keo — nó cần 1 WebSocket THẬT SỰ SỐNG join channel online_users:lobby bên Phoenix (Presence), không có cách nào giả qua REST được. Bật map_presence_enabled=true để script tự giữ WebSocket cho 1 số user, khiến họ hiện marker trên map y như app thật.",

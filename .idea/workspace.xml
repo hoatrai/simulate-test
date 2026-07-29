@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="0207327f-d58a-4b79-9be3-a108d04caad0" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/config.json" afterPath="$PROJECT_DIR$/config.json" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/simulate.py" afterPath="$PROJECT_DIR$/simulate.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -17,9 +19,12 @@
       <file leaf-file-name="config.json" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/config.json">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="223">
-              <caret line="245" column="27" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="420" selection-end-column="1" />
-              <folding />
+            <state relative-caret-position="150">
+              <caret line="546" column="34" lean-forward="true" selection-start-line="546" selection-start-column="34" selection-end-line="546" selection-end-column="34" />
+              <folding>
+                <element signature="e#6299#6636#0" expanded="false" />
+                <element signature="n#!!block;n#district_coordinates#0;n#!!top" expanded="false" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -27,8 +32,8 @@
       <file leaf-file-name="simulate.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/simulate.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="187">
-              <caret line="11" column="30" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="1263" selection-end-column="10" />
+            <state relative-caret-position="182">
+              <caret line="727" column="8" lean-forward="true" selection-start-line="727" selection-start-column="8" selection-end-line="727" selection-end-column="8" />
               <folding />
             </state>
           </provider>
@@ -36,8 +41,23 @@
       </file>
     </leaf>
   </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>andom_coords(self):</find>
+      <find>district = random.choice(cfg[&quot;districts&quot;])</find>
+      <find>&quot;concurrent_workers&quot;: 50,</find>
+    </findStrings>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/config.json" />
+        <option value="$PROJECT_DIR$/simulate.py" />
+      </list>
+    </option>
   </component>
   <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
   <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
@@ -110,12 +130,12 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1785309385305</updated>
-      <workItem from="1785309386599" duration="540000" />
+      <workItem from="1785309386599" duration="1564000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="540000" />
+    <option name="totallyTimeSpent" value="1564000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="744" extended-state="0" />
@@ -128,7 +148,7 @@
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3294509" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -153,17 +173,20 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/simulate.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="187">
-          <caret line="11" column="30" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="1263" selection-end-column="10" />
+        <state relative-caret-position="182">
+          <caret line="727" column="8" lean-forward="true" selection-start-line="727" selection-start-column="8" selection-end-line="727" selection-end-column="8" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/config.json">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="223">
-          <caret line="245" column="27" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="420" selection-end-column="1" />
-          <folding />
+        <state relative-caret-position="150">
+          <caret line="546" column="34" lean-forward="true" selection-start-line="546" selection-start-column="34" selection-end-line="546" selection-end-column="34" />
+          <folding>
+            <element signature="e#6299#6636#0" expanded="false" />
+            <element signature="n#!!block;n#district_coordinates#0;n#!!top" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
