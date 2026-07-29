@@ -529,7 +529,7 @@
   "_comment_num_rounds": "0 hoặc số âm = chạy VÔ HẠN (không tự dừng). Đặt số dương (vd 80) nếu chỉ muốn test 1 lượt rồi thôi.",
   "num_rounds": 0,
   "_comment_concurrent_workers": "Số 'worker' chạy song song (mỗi worker giả lập độc lập, giống nhiều người dùng thật cùng online 1 lúc). Tăng lên để thấy nhiều hành động chồng lấn/xôm hơn; giảm xuống nếu sợ dội quá nhiều request cùng lúc vào site test. Tự động không vượt quá số tài khoản login được.",
-  "concurrent_workers": 50,
+  "concurrent_workers": 20,
   "delay_seconds_min": 2,
   "delay_seconds_max": 6,
   "_comment_center": "Toạ độ trung tâm Quận 7 (Phú Mỹ Hưng khu vực), bán kính jitter thu hẹp lại cho tọa độ random rơi đúng trong phạm vi Q7 thay vì lan ra cả TP.",
@@ -544,7 +544,7 @@
   "websocket_url": "wss://socket.okinawanew.com/socket/websocket?vsn=2.0.0",
   "map_presence_enabled": true,
   "_comment_map_presence_worker_count": "Số user (trong số accounts đã login) sẽ giữ socket sống + hiện trên map cùng lúc. Độc lập với concurrent_workers (đó là số worker cho action REST tạo kèo/chat/join).",
-  "map_presence_worker_count": 50,
+  "map_presence_worker_count": 20,
   "_comment_map_presence_update_interval": "Chu kỳ (giây) mỗi bot gửi lại toạ độ mới lên server, giả lập như đang di chuyển nhẹ quanh khu vực.",
   "map_presence_update_interval_seconds": 25
 }
