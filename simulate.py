@@ -22,6 +22,7 @@ CHỈ chạy trên site TEST, không trỏ base_url sang production.
 """
 
 import json
+import math
 import random
 import sys
 import time
@@ -787,6 +788,13 @@ class MapPresenceBot:
         self.stop_event = stop_event
         self._ref_seq = itertools.count(1)
         self.thread = threading.Thread(target=self._run, daemon=True)
+        # State vị trí/hướng đi hiện tại — set thật ở _init_position() mỗi khi
+        # (re)connect, để mỗi lần rớt-nối-lại có thể đổi sang quận/khu vực khác.
+        self.district = None
+        self.center = None
+        self.lat = None
+        self.lng = None
+        self.heading = None
 
     def start(self):
         self.thread.start()
@@ -797,13 +805,46 @@ class MapPresenceBot:
     def _next_ref(self):
         return str(next(self._ref_seq))
 
-    def _random_coords(self):
-        district = random.choice(self.cfg["districts"])
-        center = self.cfg.get("district_centers", {}).get(district, self.cfg["hcmc_center"])
+    def _init_position(self):
+        """
+        Chọn 1 quận + xuất phát tại 1 điểm ngẫu nhiên quanh tâm quận đó, đồng
+        thời set sẵn 1 "hướng đi" (heading) ngẫu nhiên ban đầu. Quận + tâm quận
+        được giữ NGUYÊN cho suốt vòng đời kết nối -> bot đi lại trong 1 khu vực
+        chứ không nhảy lung tung khắp thành phố.
+        """
+        self.district = random.choice(self.cfg["districts"])
+        self.center = self.cfg.get("district_centers", {}).get(self.district, self.cfg["hcmc_center"])
         jitter = self.cfg["coord_jitter_deg"]
-        lat = center["lat"] + random.uniform(-jitter, jitter)
-        lng = center["lng"] + random.uniform(-jitter, jitter)
-        return lat, lng
+        r = random.uniform(0, jitter)
+        angle = random.uniform(0, 360)
+        self.lat = self.center["lat"] + r * math.cos(math.radians(angle))
+        self.lng = self.center["lng"] + r * math.sin(math.radians(angle))
+        self.heading = random.uniform(0, 360)
+        return self.lat, self.lng
+
+    def _step_coords(self):
+        """
+        Di chuyển 1 bước nhỏ theo self.heading (thay vì random.uniform toàn bộ
+        khoảng jitter) -> quỹ đạo trên map là 1 đường đi liên tục, giống người
+        thật cầm điện thoại đi bộ, không giật cục nhảy điểm.
+        Hướng đi chỉ lệch nhẹ (+/-25°) mỗi lần, và nếu đi ra khỏi bán kính
+        jitter quanh tâm quận thì bẻ hướng quay ngược lại vào trong.
+        """
+        jitter = self.cfg["coord_jitter_deg"]
+        step = jitter * random.uniform(0.08, 0.18)  # mỗi lần đi ~8-18% bán kính khu vực
+        self.heading = (self.heading + random.uniform(-25, 25)) % 360
+        new_lat = self.lat + step * math.cos(math.radians(self.heading))
+        new_lng = self.lng + step * math.sin(math.radians(self.heading))
+
+        if math.hypot(new_lat - self.center["lat"], new_lng - self.center["lng"]) > jitter:
+            angle_to_center = math.degrees(math.atan2(
+                self.center["lng"] - self.lng, self.center["lat"] - self.lat))
+            self.heading = (angle_to_center + random.uniform(-20, 20)) % 360
+            new_lat = self.lat + step * math.cos(math.radians(self.heading))
+            new_lng = self.lng + step * math.sin(math.radians(self.heading))
+
+        self.lat, self.lng = new_lat, new_lng
+        return self.lat, self.lng
 
     def _run(self):
         backoff = 3
@@ -824,7 +865,7 @@ class MapPresenceBot:
         ws = websocket.create_connection(self.ws_url, timeout=10)
         try:
             join_ref = self._next_ref()
-            lat, lng = self._random_coords()
+            lat, lng = self._init_position()
             username = self.user.display_name or self.user.username
 
             ws.send(json.dumps([
@@ -855,9 +896,10 @@ class MapPresenceBot:
                     last_heartbeat = now
 
                 if now - last_update >= update_interval:
-                    # Giả lập user "di chuyển" nhẹ quanh khu vực -> đổi toạ độ
-                    # mỗi lần update, giống người thật cầm điện thoại đi lại.
-                    lat, lng = self._random_coords()
+                    # Giả lập user "di chuyển" nhẹ quanh khu vực -> đi tiếp 1
+                    # bước nhỏ theo hướng hiện tại (random walk), giống người
+                    # thật cầm điện thoại đi bộ, thay vì nhảy toạ độ lung tung.
+                    lat, lng = self._step_coords()
                     ws.send(json.dumps([
                         join_ref, self._next_ref(), "online_users:lobby", "update_presence",
                         {

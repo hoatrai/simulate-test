@@ -1,0 +1,471 @@
+{
+  "base_url": "https://spiritwebs.okinawanew.com",
+  "_comment_accounts": "Điền username/password của các tài khoản test đã có sẵn trên site test. Script sẽ tự login lấy JWT cho từng người.",
+  "accounts": [
+    {
+      "username": "duonganh",
+      "password": "1"
+    },
+    {
+      "username": "huy",
+      "password": "1"
+    },
+    {
+      "username": "le.hai",
+      "password": "1"
+    },
+    {
+      "username": "nhung",
+      "password": "1"
+    },
+    {
+      "username": "le.ha",
+      "password": "1"
+    },
+    {
+      "username": "a.ngo",
+      "password": "1"
+    },
+    {
+      "username": "hoai",
+      "password": "1"
+    },
+    {
+      "username": "nam",
+      "password": "1"
+    },
+    {
+      "username": "khachhang",
+      "password": "1"
+    },
+    {
+      "username": "hihi",
+      "password": "1"
+    },
+    {
+      "username": "namde",
+      "password": "1"
+    },
+    {
+      "username": "nikenhouse",
+      "password": "1"
+    },
+    {
+      "username": "bemay",
+      "password": "1"
+    },
+    {
+      "username": "kioaoa",
+      "password": "1"
+    },
+    {
+      "username": "halinh",
+      "password": "1"
+    },
+    {
+      "username": "camgiang",
+      "password": "1"
+    },
+    {
+      "username": "phuongthuy1",
+      "password": "1"
+    },
+    {
+      "username": "thuytranggame",
+      "password": "1"
+    },
+    {
+      "username": "ngocthuy",
+      "password": "1"
+    },
+    {
+      "username": "khahan",
+      "password": "1"
+    },
+    {
+      "username": "hanhnhi",
+      "password": "1"
+    },
+    {
+      "username": "phamthao",
+      "password": "1"
+    },
+    {
+      "username": "baotien1",
+      "password": "1"
+    },
+    {
+      "username": "quynhnhu",
+      "password": "1"
+    },
+    {
+      "username": "kimlinh",
+      "password": "1"
+    },
+    {
+      "username": "khoabao",
+      "password": "1"
+    },
+    {
+      "username": "phuongdiu",
+      "password": "1"
+    },
+    {
+      "username": "ngoclinh",
+      "password": "1"
+    },
+    {
+      "username": "kimphuc",
+      "password": "1"
+    },
+    {
+      "username": "thaothao",
+      "password": "1"
+    },
+    {
+      "username": "tuyetnhung",
+      "password": "1"
+    },
+    {
+      "username": "kyduyen",
+      "password": "1"
+    },
+    {
+      "username": "phuongthuy",
+      "password": "1"
+    },
+    {
+      "username": "lycao",
+      "password": "1"
+    },
+    {
+      "username": "khanhvan",
+      "password": "1"
+    },
+    {
+      "username": "khanhduyen",
+      "password": "1"
+    },
+    {
+      "username": "quynhtram",
+      "password": "1"
+    },
+    {
+      "username": "phuonglan",
+      "password": "1"
+    },
+    {
+      "username": "vincentta",
+      "password": "1"
+    },
+    {
+      "username": "thuygiang",
+      "password": "1"
+    },
+    {
+      "username": "myduyen",
+      "password": "1"
+    },
+    {
+      "username": "thanhhoai",
+      "password": "1"
+    },
+    {
+      "username": "nguyenhang",
+      "password": "1"
+    },
+    {
+      "username": "nhanhthang",
+      "password": "1"
+    },
+    {
+      "username": "hanhtay",
+      "password": "1"
+    },
+    {
+      "username": "moon",
+      "password": "1"
+    },
+    {
+      "username": "huyentrang",
+      "password": "1"
+    },
+    {
+      "username": "ngancharm",
+      "password": "1"
+    },
+    {
+      "username": "nana",
+      "password": "1"
+    },
+    {
+      "username": "hanguyen",
+      "password": "1"
+    },
+    {
+      "username": "minhminh",
+      "password": "1"
+    },
+    {
+      "username": "tican",
+      "password": "1"
+    },
+    {
+      "username": "nguyenhanhheny",
+      "password": "1"
+    },
+    {
+      "username": "yenmy",
+      "password": "1"
+    },
+    {
+      "username": "huongnhan",
+      "password": "1"
+    },
+    {
+      "username": "loannguyen",
+      "password": "1"
+    },
+    {
+      "username": "hoangphuong",
+      "password": "1"
+    },
+    {
+      "username": "tramtram",
+      "password": "1"
+    },
+    {
+      "username": "trangkim",
+      "password": "1"
+    },
+    {
+      "username": "vypham",
+      "password": "1"
+    },
+    {
+      "username": "trantran",
+      "password": "1"
+    },
+    {
+      "username": "thuyvy",
+      "password": "1"
+    },
+    {
+      "username": "linhbien",
+      "password": "1"
+    },
+    {
+      "username": "nguyenhanh",
+      "password": "1"
+    },
+    {
+      "username": "bonglinh",
+      "password": "1"
+    },
+    {
+      "username": "trangthu",
+      "password": "1"
+    },
+    {
+      "username": "hienmy",
+      "password": "1"
+    },
+    {
+      "username": "vincent",
+      "password": "1"
+    },
+    {
+      "username": "abcde",
+      "password": "1"
+    },
+    {
+      "username": "kimhien",
+      "password": "1"
+    },
+    {
+      "username": "honggam",
+      "password": "1"
+    },
+    {
+      "username": "thuongnguyen",
+      "password": "1"
+    },
+    {
+      "username": "pinpham",
+      "password": "1"
+    },
+    {
+      "username": "muoiotchanh",
+      "password": "1"
+    },
+    {
+      "username": "thanhthanh",
+      "password": "1"
+    },
+    {
+      "username": "baotien",
+      "password": "1"
+    },
+    {
+      "username": "hoangan",
+      "password": "1"
+    },
+    {
+      "username": "locken",
+      "password": "1"
+    },
+    {
+      "username": "ypham",
+      "password": "1"
+    },
+    {
+      "username": "Ngoc",
+      "password": "1"
+    },
+    {
+      "username": "maikha",
+      "password": "1"
+    },
+    {
+      "username": "ngocbich",
+      "password": "1"
+    },
+    {
+      "username": "paddy",
+      "password": "1"
+    },
+    {
+      "username": "ken",
+      "password": "1"
+    },
+    {
+      "username": "kiwi",
+      "password": "1"
+    }
+  ],
+  "_comment_products": "Danh sách product_id (kèo) đã tồn tại sẵn trên site (WooCommerce product), dùng để tạo invite. Nếu để trống, script sẽ bỏ qua hành vi 'tạo kèo mới' và chỉ join các invite đang mở sẵn.",
+  "product_ids": [],
+  "_comment_existing_invites": "Nếu anh đã biết sẵn 1 vài invite_id đang mở trên site test, điền vào đây để script chắc chắn có cái để join/chat ngay từ round đầu (không phải chờ ai đó tạo kèo trước).",
+  "seed_invite_ids": [],
+  "_comment_districts": "Đã mở rộng ra full 24 quận/huyện cũ của TP.HCM (trước sáp nhập hành chính 2021/2025, tên vẫn đang dùng trên site test). Mỗi quận có toạ độ tâm riêng trong 'district_centers' bên dưới -> action_finding_keo và map-presence bot sẽ chọn quận trước rồi random toạ độ quanh đúng tâm quận đó, thay vì tất cả dồn quanh 1 điểm như trước. Muốn thu hẹp lại thì chỉ cần bớt phần tử trong mảng này (không cần đụng district_centers).",
+  "districts": [
+    "Quận 1",
+    "Quận 2",
+    "Quận 3",
+    "Quận 4",
+    "Quận 5",
+    "Quận 6",
+    "Quận 7",
+    "Quận 8",
+    "Quận 9",
+    "Quận 10",
+    "Quận 11",
+    "Quận 12",
+    "Quận Bình Thạnh",
+    "Quận Bình Tân",
+    "Quận Gò Vấp",
+    "Quận Phú Nhuận",
+    "Quận Tân Bình",
+    "Quận Tân Phú",
+    "Quận Thủ Đức",
+    "Huyện Bình Chánh",
+    "Huyện Cần Giờ",
+    "Huyện Củ Chi",
+    "Huyện Hóc Môn",
+    "Huyện Nhà Bè"
+  ],
+  "_comment_district_centers": "Toạ độ tâm gần đúng cho từng quận/huyện, dùng làm điểm gốc jitter (coord_jitter_deg) khi random vị trí. Nếu 1 quận không có trong map này, script fallback về hcmc_center (Q7) như code cũ.",
+  "district_centers": {
+    "Quận 1": { "lat": 10.7769, "lng": 106.7009 },
+    "Quận 2": { "lat": 10.7869, "lng": 106.7498 },
+    "Quận 3": { "lat": 10.7756, "lng": 106.6822 },
+    "Quận 4": { "lat": 10.7580, "lng": 106.7020 },
+    "Quận 5": { "lat": 10.7550, "lng": 106.6683 },
+    "Quận 6": { "lat": 10.7466, "lng": 106.6350 },
+    "Quận 7": { "lat": 10.7411, "lng": 106.7186 },
+    "Quận 8": { "lat": 10.7230, "lng": 106.6289 },
+    "Quận 9": { "lat": 10.8412, "lng": 106.8098 },
+    "Quận 10": { "lat": 10.7726, "lng": 106.6674 },
+    "Quận 11": { "lat": 10.7635, "lng": 106.6501 },
+    "Quận 12": { "lat": 10.8671, "lng": 106.6413 },
+    "Quận Bình Thạnh": { "lat": 10.8106, "lng": 106.7091 },
+    "Quận Bình Tân": { "lat": 10.7652, "lng": 106.6032 },
+    "Quận Gò Vấp": { "lat": 10.8386, "lng": 106.6652 },
+    "Quận Phú Nhuận": { "lat": 10.7990, "lng": 106.6797 },
+    "Quận Tân Bình": { "lat": 10.8014, "lng": 106.6530 },
+    "Quận Tân Phú": { "lat": 10.7909, "lng": 106.6280 },
+    "Quận Thủ Đức": { "lat": 10.8500, "lng": 106.7710 },
+    "Huyện Bình Chánh": { "lat": 10.6890, "lng": 106.5750 },
+    "Huyện Cần Giờ": { "lat": 10.4090, "lng": 106.9550 },
+    "Huyện Củ Chi": { "lat": 10.9737, "lng": 106.5074 },
+    "Huyện Hóc Môn": { "lat": 10.8887, "lng": 106.5952 },
+    "Huyện Nhà Bè": { "lat": 10.6958, "lng": 106.7391 }
+  },
+  "_comment_activity_types": "4 category thật của 'Loại kèo', lấy đúng từ functions.php (dòng ~6005/6023): Bar/Pub, Karaoke, Nhậu, Beer club.",
+  "activity_types": [
+    "Bar/Pub",
+    "Karaoke",
+    "Nhậu",
+    "Beer club"
+  ],
+  "finding_options": [
+    "Bây giờ",
+    "Buổi trưa",
+    "Buổi chiều",
+    "Buổi tối",
+    "Khuya"
+  ],
+  "chat_messages": [
+    "Alo có ai rảnh nhậu tối nay không?",
+    "Kèo này mấy giờ bắt đầu vậy?",
+    "Cho mình xin địa chỉ với",
+    "Ok mình join nha",
+    "Trễ xíu mình tới liền",
+    "Quán này đồ ăn ngon không mọi người?",
+    "Còn chỗ trống không, cho mình join với",
+    "Haha vui quá, lần sau rủ nữa nha",
+    "Mình tới nơi rồi, mọi người ở bàn nào vậy?",
+    "Thôi hẹn kèo sau nha, hôm nay bận quá",
+    "ok",
+    "uk",
+    "5 phút nữa mình ra",
+    "Cho mình xin số điện thoại liên lạc dễ hơn",
+    "Đông không mọi người?",
+    "Sao im vậy trời",
+    "Hẹn lần sau nha, hôm nay mình bận đột xuất",
+    "Ê có ai chưa tới không, chờ chung luôn",
+    "Gửi mình cái map với",
+    "Vui ghê, cảm ơn mọi người nha"
+  ],
+
+  "_comment_delay": "human_like_delay=true: nghỉ giữa các action theo kiểu người thật (phần lớn nhanh, thỉnh thoảng nghỉ ngắn/dài) thay vì đều đặn theo delay_seconds_min/max cố định.",
+  "human_like_delay": true,
+  "actions_enabled": {
+    "create_invite": true,
+    "join_invite": true,
+    "send_chat": true,
+    "group_chat": true,
+    "finding_keo": true
+  },
+  "_comment_num_rounds": "0 hoặc số âm = chạy VÔ HẠN (không tự dừng). Đặt số dương (vd 80) nếu chỉ muốn test 1 lượt rồi thôi.",
+  "num_rounds": 0,
+  "_comment_concurrent_workers": "Số 'worker' chạy song song (mỗi worker giả lập độc lập, giống nhiều người dùng thật cùng online 1 lúc). Tăng lên để thấy nhiều hành động chồng lấn/xôm hơn; giảm xuống nếu sợ dội quá nhiều request cùng lúc vào site test. Tự động không vượt quá số tài khoản login được.",
+  "concurrent_workers": 30,
+  "delay_seconds_min": 2,
+  "delay_seconds_max": 6,
+  "_comment_center": "Toạ độ trung tâm Quận 7 (Phú Mỹ Hưng khu vực), bán kính jitter thu hẹp lại cho tọa độ random rơi đúng trong phạm vi Q7 thay vì lan ra cả TP.",
+  "hcmc_center": {
+    "lat": 10.7411,
+    "lng": 106.7186
+  },
+  "coord_jitter_deg": 0.02,
+  "log_file": "simulate_log.txt",
+
+  "_comment_map_presence": "🆕 Tính năng hiện user 'xung quanh' trên map (flutter_map.dart) KHÁC hẳn finding-keo — nó cần 1 WebSocket THẬT SỰ SỐNG join channel online_users:lobby bên Phoenix (Presence), không có cách nào giả qua REST được. Bật map_presence_enabled=true để script tự giữ WebSocket cho 1 số user, khiến họ hiện marker trên map y như app thật.",
+  "websocket_url": "wss://socket.okinawanew.com/socket/websocket?vsn=2.0.0",
+  "map_presence_enabled": true,
+  "_comment_map_presence_worker_count": "Số user (trong số accounts đã login) sẽ giữ socket sống + hiện trên map cùng lúc. Độc lập với concurrent_workers (đó là số worker cho action REST tạo kèo/chat/join).",
+  "map_presence_worker_count": 30,
+  "_comment_map_presence_update_interval": "Chu kỳ (giây) mỗi bot gửi lại toạ độ mới lên server, giả lập như đang di chuyển nhẹ quanh khu vực.",
+  "map_presence_update_interval_seconds": 25
+}
