@@ -717,11 +717,11 @@ def action_send_group_chat(api, cfg, users, state: SharedState):
 
 
 def action_finding_keo(api, cfg, user: TestUser, state: SharedState):
-    center = cfg["hcmc_center"]
+    district = random.choice(cfg["districts"])
+    center = cfg.get("district_centers", {}).get(district, cfg["hcmc_center"])
     jitter = cfg["coord_jitter_deg"]
     lat = center["lat"] + random.uniform(-jitter, jitter)
     lng = center["lng"] + random.uniform(-jitter, jitter)
-    district = random.choice(cfg["districts"])
     option = random.choice(cfg["finding_options"])
     activity = random.choice(cfg["activity_types"])
 
@@ -798,7 +798,8 @@ class MapPresenceBot:
         return str(next(self._ref_seq))
 
     def _random_coords(self):
-        center = self.cfg["hcmc_center"]
+        district = random.choice(self.cfg["districts"])
+        center = self.cfg.get("district_centers", {}).get(district, self.cfg["hcmc_center"])
         jitter = self.cfg["coord_jitter_deg"]
         lat = center["lat"] + random.uniform(-jitter, jitter)
         lng = center["lng"] + random.uniform(-jitter, jitter)
