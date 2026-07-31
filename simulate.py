@@ -781,11 +781,23 @@ class MapPresenceBot:
 
     HEARTBEAT_INTERVAL_SECONDS = 25  # Phoenix mặc định coi là chết nếu im lặng ~60s
 
-    def __init__(self, ws_url, user: "TestUser", cfg, stop_event: threading.Event):
+    # Sau khi "tới nơi", đứng/ngồi yên 1 khoảng ngẫu nhiên trong khoảng này
+    # trước khi tự chọn điểm đến mới -> giả lập đang ngồi nhậu/cà phê tại chỗ.
+    SIT_MIN_SECONDS = 8 * 60
+    SIT_MAX_SECONDS = 20 * 60
+
+    def __init__(self, ws_url, user: "TestUser", cfg, stop_event: threading.Event,
+                 avatar="", shared_district=None, shared_destination=None):
         self.ws_url = ws_url
         self.user = user
         self.cfg = cfg
         self.stop_event = stop_event
+        self.avatar = avatar
+        # Nếu được gán sẵn (bot thuộc 1 "nhóm bạn hẹn nhau") thì dùng chung
+        # quận + điểm đến với cả nhóm -> nhiều marker cùng hội tụ về 1 chỗ
+        # trên map, giống 1 nhóm người thật cùng đi tới 1 quán.
+        self.shared_district = shared_district
+        self.shared_destination = shared_destination
         self._ref_seq = itertools.count(1)
         self.thread = threading.Thread(target=self._run, daemon=True)
         # State vị trí/hướng đi hiện tại — set thật ở _init_position() mỗi khi
@@ -794,7 +806,9 @@ class MapPresenceBot:
         self.center = None
         self.lat = None
         self.lng = None
-        self.heading = None
+        self.destination = None
+        self.state = "moving"   # "moving" (đang đi tới destination) | "sitting" (đã tới, đứng yên)
+        self.sit_until = None
 
     def start(self):
         self.thread.start()
@@ -805,45 +819,81 @@ class MapPresenceBot:
     def _next_ref(self):
         return str(next(self._ref_seq))
 
-    def _init_position(self):
-        """
-        Chọn 1 quận + xuất phát tại 1 điểm ngẫu nhiên quanh tâm quận đó, đồng
-        thời set sẵn 1 "hướng đi" (heading) ngẫu nhiên ban đầu. Quận + tâm quận
-        được giữ NGUYÊN cho suốt vòng đời kết nối -> bot đi lại trong 1 khu vực
-        chứ không nhảy lung tung khắp thành phố.
-        """
-        self.district = random.choice(self.cfg["districts"])
-        self.center = self.cfg.get("district_centers", {}).get(self.district, self.cfg["hcmc_center"])
-        jitter = self.cfg["coord_jitter_deg"]
+    def _random_point_around(self, center, jitter):
         r = random.uniform(0, jitter)
         angle = random.uniform(0, 360)
-        self.lat = self.center["lat"] + r * math.cos(math.radians(angle))
-        self.lng = self.center["lng"] + r * math.sin(math.radians(angle))
-        self.heading = random.uniform(0, 360)
+        return (center["lat"] + r * math.cos(math.radians(angle)),
+                center["lng"] + r * math.sin(math.radians(angle)))
+
+    def _pick_destination(self):
+        """Chọn 1 'điểm hẹn' mới (giả lập 1 quán cụ thể) trong quận hiện tại."""
+        jitter = self.cfg["coord_jitter_deg"]
+        return self._random_point_around(self.center, jitter)
+
+    def _init_position(self):
+        """
+        Chọn quận + điểm đến ban đầu. Nếu bot này thuộc 1 "nhóm bạn" (được
+        start_map_presence_bots gán shared_district/shared_destination) thì
+        dùng chung điểm đến với cả nhóm -> nhiều marker cùng hội tụ về 1 chỗ.
+        Vị trí xuất phát là 1 điểm khác ngẫu nhiên trong quận (chưa tới nơi),
+        để bot có quãng đường "đi tới" chứ không tự nhiên đứng sẵn ở đích.
+        """
+        if self.shared_district and self.shared_destination:
+            self.district = self.shared_district
+            self.destination = self.shared_destination
+        else:
+            self.district = _choose_weighted_district(self.cfg)
+
+        self.center = self.cfg.get("district_centers", {}).get(self.district, self.cfg["hcmc_center"])
+        jitter = self.cfg["coord_jitter_deg"]
+        self.lat, self.lng = self._random_point_around(self.center, jitter)
+        if self.destination is None:
+            self.destination = self._pick_destination()
+        self.state = "moving"
+        self.sit_until = None
         return self.lat, self.lng
 
     def _step_coords(self):
         """
-        Di chuyển 1 bước nhỏ theo self.heading (thay vì random.uniform toàn bộ
-        khoảng jitter) -> quỹ đạo trên map là 1 đường đi liên tục, giống người
-        thật cầm điện thoại đi bộ, không giật cục nhảy điểm.
-        Hướng đi chỉ lệch nhẹ (+/-25°) mỗi lần, và nếu đi ra khỏi bán kính
-        jitter quanh tâm quận thì bẻ hướng quay ngược lại vào trong.
+        Hành vi 2 pha, giống người thật đi nhậu:
+        - "moving": đi dần về self.destination theo từng bước nhỏ (hướng lệch
+          nhẹ +/-15° mỗi lần cho tự nhiên, không đi thẳng tắp như robot).
+          Tới đủ gần đích -> chuyển sang "sitting".
+        - "sitting": đứng/ngồi gần như yên 1 chỗ (chỉ dao động vài mét, kiểu
+          đổi tư thế cầm điện thoại) trong SIT_MIN..SIT_MAX giây, sau đó tự
+          chọn 1 điểm đến mới trong quận và quay lại "moving" (kèo tan, đi
+          chỗ khác / về nhà).
         """
         jitter = self.cfg["coord_jitter_deg"]
-        step = jitter * random.uniform(0.08, 0.18)  # mỗi lần đi ~8-18% bán kính khu vực
-        self.heading = (self.heading + random.uniform(-25, 25)) % 360
-        new_lat = self.lat + step * math.cos(math.radians(self.heading))
-        new_lng = self.lng + step * math.sin(math.radians(self.heading))
+        now = time.time()
 
-        if math.hypot(new_lat - self.center["lat"], new_lng - self.center["lng"]) > jitter:
-            angle_to_center = math.degrees(math.atan2(
-                self.center["lng"] - self.lng, self.center["lat"] - self.lat))
-            self.heading = (angle_to_center + random.uniform(-20, 20)) % 360
-            new_lat = self.lat + step * math.cos(math.radians(self.heading))
-            new_lng = self.lng + step * math.sin(math.radians(self.heading))
+        if self.state == "sitting":
+            if now >= self.sit_until:
+                self.destination = self._pick_destination()
+                self.state = "moving"
+            else:
+                micro = jitter * 0.01
+                self.lat += random.uniform(-micro, micro)
+                self.lng += random.uniform(-micro, micro)
+                return self.lat, self.lng
 
-        self.lat, self.lng = new_lat, new_lng
+        dlat = self.destination[0] - self.lat
+        dlng = self.destination[1] - self.lng
+        dist = math.hypot(dlat, dlng)
+        arrival_threshold = jitter * 0.03
+
+        if dist <= arrival_threshold:
+            self.state = "sitting"
+            self.sit_until = now + random.uniform(self.SIT_MIN_SECONDS, self.SIT_MAX_SECONDS)
+            logging.info(f"[MAP] {self.user.username} đã tới điểm hẹn ở {self.district}, "
+                         f"dừng lại ~{int((self.sit_until - now) / 60)} phút.")
+            return self.lat, self.lng
+
+        step = min(dist, jitter * random.uniform(0.08, 0.18))
+        angle_to_dest = math.degrees(math.atan2(dlng, dlat))
+        heading = math.radians(angle_to_dest + random.uniform(-15, 15))
+        self.lat += step * math.cos(heading)
+        self.lng += step * math.sin(heading)
         return self.lat, self.lng
 
     def _run(self):
@@ -873,7 +923,7 @@ class MapPresenceBot:
                 {
                     "user_id": self.user.user_id,
                     "username": username,
-                    "avatar": "",
+                    "avatar": self.avatar,
                     "latitude": lat,
                     "longitude": lng,
                 },
@@ -904,7 +954,7 @@ class MapPresenceBot:
                         join_ref, self._next_ref(), "online_users:lobby", "update_presence",
                         {
                             "username": username,
-                            "avatar": "",
+                            "avatar": self.avatar,
                             "latitude": lat,
                             "longitude": lng,
                         },
@@ -945,8 +995,48 @@ def start_map_presence_bots(cfg, users, stop_event: threading.Event):
 
     count = min(cfg.get("map_presence_worker_count", 10), len(users))
     chosen = random.sample(users, count)
+    avatars = cfg.get("bot_avatars") or [""]
 
-    bots = [MapPresenceBot(ws_url, u, cfg, stop_event) for u in chosen]
+    # Chia ngẫu nhiên 1 phần bot thành các "nhóm bạn" (2-4 người) cùng hẹn tới
+    # 1 điểm trong cùng 1 quận -> nhìn trên map sẽ thấy nhiều marker hội tụ
+    # lại gần nhau đúng kiểu 1 nhóm người thật đi nhậu chung, thay vì rải đều
+    # ngẫu nhiên khắp nơi. group_ratio = tỉ lệ user được xếp vào nhóm.
+    group_ratio = cfg.get("map_presence_group_ratio", 0.5)
+    pool = chosen[:]
+    random.shuffle(pool)
+    n_grouped = int(len(pool) * group_ratio)
+    grouped_pool, solo_pool = pool[:n_grouped], pool[n_grouped:]
+
+    bots = []
+    i = 0
+    while i < len(grouped_pool):
+        size = min(random.randint(2, 4), len(grouped_pool) - i)
+        members = grouped_pool[i:i + size]
+        i += size
+
+        district = _choose_weighted_district(cfg)
+        center = cfg.get("district_centers", {}).get(district, cfg["hcmc_center"])
+        jitter = cfg["coord_jitter_deg"]
+        # Điểm hẹn chung của cả nhóm (giả lập toạ độ 1 quán cụ thể).
+        r = random.uniform(0, jitter * 0.6)  # nằm gần tâm quận hơn 1 chút cho hợp lý
+        angle = random.uniform(0, 360)
+        destination = (center["lat"] + r * math.cos(math.radians(angle)),
+                       center["lng"] + r * math.sin(math.radians(angle)))
+
+        for u in members:
+            bots.append(MapPresenceBot(
+                ws_url, u, cfg, stop_event,
+                avatar=random.choice(avatars),
+                shared_district=district,
+                shared_destination=destination,
+            ))
+        logging.info(f"[MAP] Nhóm {len(members)} user cùng hẹn nhau ở {district} "
+                     f"(lat={destination[0]:.5f}, lng={destination[1]:.5f}).")
+
+    for u in solo_pool:
+        bots.append(MapPresenceBot(ws_url, u, cfg, stop_event, avatar=random.choice(avatars)))
+
+    random.shuffle(bots)  # tránh join theo đúng thứ tự nhóm, rải ngẫu nhiên hơn
     for bot in bots:
         bot.start()
         # Rải thời điểm join ra 1 chút, giống cách rải worker REST bên dưới —
@@ -956,6 +1046,19 @@ def start_map_presence_bots(cfg, users, stop_event: threading.Event):
     logging.info(f"[MAP] Đã bật presence cho {len(bots)}/{len(users)} user đã login -> họ sẽ hiện "
                  f"marker trên map trong lúc script còn chạy.")
     return bots
+
+
+def _choose_weighted_district(cfg):
+    """
+    Chọn 1 quận, ưu tiên trọng số nếu config có khai báo "district_weights"
+    (vd khu trung tâm hay có kèo nhậu hơn ngoại thành). Nếu không khai báo
+    hoặc thiếu quận nào trong map trọng số -> mặc định weight=1 (đều tay như
+    cũ, không breaking config hiện có).
+    """
+    districts = cfg["districts"]
+    weights_cfg = cfg.get("district_weights", {})
+    weights = [weights_cfg.get(d, 1) for d in districts]
+    return random.choices(districts, weights=weights, k=1)[0]
 
 
 def fetch_product_ids(api: ApiClient, cfg, max_products=60):

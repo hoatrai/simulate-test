@@ -467,5 +467,20 @@
   "_comment_map_presence_worker_count": "Số user (trong số accounts đã login) sẽ giữ socket sống + hiện trên map cùng lúc. Độc lập với concurrent_workers (đó là số worker cho action REST tạo kèo/chat/join).",
   "map_presence_worker_count": 30,
   "_comment_map_presence_update_interval": "Chu kỳ (giây) mỗi bot gửi lại toạ độ mới lên server, giả lập như đang di chuyển nhẹ quanh khu vực.",
-  "map_presence_update_interval_seconds": 25
+  "map_presence_update_interval_seconds": 25,
+
+  "_comment_map_presence_group_ratio": "🆕 Tỉ lệ (0.0-1.0) số user map-presence sẽ được ghép thành 'nhóm bạn' (2-4 người) cùng hẹn hội tụ về 1 điểm chung trong cùng 1 quận, thay vì mỗi người đi lang thang riêng lẻ. Phần còn lại vẫn đi solo như bình thường. 0 = tắt hẳn tính năng nhóm.",
+  "map_presence_group_ratio": 0.5,
+
+  "_comment_district_weights": "🆕 Tuỳ chọn: trọng số ưu tiên chọn quận (số càng lớn càng hay được chọn) cho cả bot solo lẫn nhóm. Quận nào không liệt kê ở đây mặc định weight=1 (đều tay như cũ). Ví dụ dưới đây ưu tiên khu trung tâm/hay nhậu hơn.",
+  "district_weights": {
+    "Quận 1": 3,
+    "Quận 3": 2,
+    "Quận Bình Thạnh": 2,
+    "Quận Phú Nhuận": 2,
+    "Quận 7": 2
+  },
+
+  "_comment_bot_avatars": "🆕 Tuỳ chọn: danh sách URL avatar để random gán cho từng bot map-presence, cho marker trên map đa dạng hơn thay vì avatar rỗng đồng loạt. Để mảng rỗng hoặc bỏ hẳn key này nếu chưa có avatar mẫu -> script tự fallback avatar rỗng như cũ.",
+  "bot_avatars": []
 }
