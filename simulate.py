@@ -469,6 +469,15 @@ class SharedState:
         self.invite_status = {}
         self.finding_on = set()
 
+        # 🆕 ATTENDANCE: invite_id -> {user_id: attendance_status}, để nhớ
+        # user nào đã ở trạng thái nào rồi (tránh gọi lại API set đúng
+        # status cũ, và để quyết định bước tiếp theo trong hành trình
+        # undecided -> on_the_way -> going/late/not_going).
+        self.invite_attendance = {}
+        # 🆕 Cache toạ độ quán của từng invite (lat, lng) hoặc False nếu đã
+        # thử fetch mà không có -> tránh gọi lại meeting-point liên tục.
+        self.invite_venue_coords = {}
+
         # Contextual group-chat state:
         # invite_id -> {"stage", "turns", "turn_index", "started_at"}
         self.invite_chat_conversations = {}
@@ -972,6 +981,126 @@ class MapPresenceBot:
                 pass
 
 
+def _get_invite_venue_coords(api, invite_id, token, state: SharedState):
+    """
+    Lấy toạ độ quán (điểm hẹn) của 1 invite qua GET /invite/meeting-point,
+    có cache trong state để không gọi lại API mỗi lần cần check-in cho
+    cùng 1 invite. Trả về (lat, lng) hoặc None nếu invite chưa có toạ độ /
+    fetch lỗi.
+    """
+    with state.lock:
+        cached = state.invite_venue_coords.get(invite_id)
+    if cached is not None:
+        return cached if cached is not False else None
+
+    r = api.get("/wp-json/nhau/v1/invite/meeting-point", token=token,
+                params={"invite_id": invite_id})
+    coords = None
+    if r is not None and r.status_code == 200:
+        data = safe_json(r)
+        if data and data.get("success"):
+            try:
+                coords = (float(data["lat"]), float(data["lng"]))
+            except (TypeError, ValueError, KeyError):
+                coords = None
+
+    with state.lock:
+        state.invite_venue_coords[invite_id] = coords if coords is not None else False
+    return coords
+
+
+def action_update_attendance(api, cfg, users, state: SharedState):
+    """
+    🆕 Giả lập user tự cập nhật trạng thái tham gia kèo theo thời gian thực,
+    y hệt luồng thật trong app (nút "Đang tới" / "Đã tới" / "Trễ" / "Không
+    tới" ở product_detail_page.dart), qua route
+    POST /nhau/v1/invite/update-attendance.
+
+    Hành trình mô phỏng, dựa theo stage suy ra từ start_time (dùng lại
+    đúng get_invite_stage_locked() đang dùng cho group-chat):
+        before_start -> phần lớn chuyển 'on_the_way' (đang tới), thỉnh
+                        thoảng huỷ ('not_going')
+        arrival / during_meet -> phần lớn chuyển 'going' (ĐÃ TỚI — cần
+                        check-in GPS thật, script tự lấy toạ độ quán qua
+                        /invite/meeting-point rồi rải toạ độ giả quanh đó
+                        trong bán kính cho phép), số ít bị 'late' (trễ,
+                        không cần GPS).
+    Không đụng tới user đã 'going' hoặc 'not_going' (coi như đã chốt).
+    """
+    with state.lock:
+        candidates = []
+        for invite_id, member_ids in state.invite_members.items():
+            stage = get_invite_stage_locked(invite_id, state)
+            if stage not in ("before_start", "arrival", "during_meet"):
+                continue
+            for uid in member_ids:
+                current = state.invite_attendance.get(invite_id, {}).get(uid)
+                if current in ("going", "not_going"):
+                    continue  # đã chốt trạng thái, không đổi nữa
+                candidates.append((invite_id, uid, stage, current))
+
+    if not candidates:
+        return
+
+    invite_id, user_id, stage, current = random.choice(candidates)
+    user = next((u for u in users if u.user_id == user_id), None)
+    if user is None:
+        return
+
+    roll = random.random()
+    if stage == "before_start":
+        if current == "late":
+            return
+        new_status = "not_going" if roll < 0.08 else "on_the_way"
+    else:  # arrival / during_meet -> tới giờ hẹn hoặc đã qua giờ
+        if current == "late":
+            return
+        new_status = "going" if roll < 0.85 else "late"
+
+    if new_status == current:
+        return
+
+    payload = {"invite_id": invite_id, "status": new_status}
+
+    if new_status == "going":
+        coords = _get_invite_venue_coords(api, invite_id, user.token, state)
+        if coords is None:
+            # Kèo chưa có toạ độ quán -> không check-in GPS được, fallback
+            # 'late' để user vẫn có trạng thái cập nhật thay vì kẹt mãi.
+            new_status = "late"
+            payload["status"] = "late"
+        else:
+            # Rải quanh quán trong khoảng vài chục mét, luôn nằm trong bán
+            # kính check-in cho phép (NHAU_CHECKIN_RADIUS_METERS = 300m
+            # bên server) để mô phỏng "đã đứng gần quán".
+            jitter_deg = 0.0004  # ~40-45m
+            payload["lat"] = coords[0] + random.uniform(-jitter_deg, jitter_deg)
+            payload["lng"] = coords[1] + random.uniform(-jitter_deg, jitter_deg)
+
+    r = api.post("/wp-json/nhau/v1/invite/update-attendance", token=user.token, json_body=payload)
+    if r is None:
+        return
+
+    data = safe_json(r)
+    label = {
+        "on_the_way": "ĐANG TỚI",
+        "going": "ĐÃ TỚI",
+        "late": "TRỄ",
+        "not_going": "KHÔNG THAM GIA",
+    }.get(new_status, new_status)
+
+    if data and data.get("success"):
+        with state.lock:
+            state.invite_attendance.setdefault(invite_id, {})[user_id] = data.get(
+                "attendance_status", new_status
+            )
+        logging.info(f"[ATTENDANCE] {user.username} invite_id={invite_id} -> {label}")
+    else:
+        logging.info(
+            f"[ATTENDANCE] {user.username} invite_id={invite_id} -> {label} thất bại: {data}"
+        )
+
+
 def start_map_presence_bots(cfg, users, stop_event: threading.Event):
     """
     Chọn ngẫu nhiên map_presence_worker_count user (trong số đã login) để
@@ -1246,6 +1375,8 @@ def worker_loop(worker_id, api, cfg, users, state: SharedState, weighted_actions
                 action_send_group_chat(api, cfg, users, state)
             elif action == "finding_keo":
                 action_finding_keo(api, cfg, user, state)
+            elif action == "update_attendance":
+                action_update_attendance(api, cfg, users, state)
         except Exception as e:
             # Không để 1 lỗi lẻ tẻ (network chập chờn, response lạ...) làm
             # chết cả worker đang chạy vô hạn/chạy nền dài hạn.
@@ -1336,6 +1467,11 @@ def main():
         weighted_actions += ["group_chat"] * 6
     if actions.get("finding_keo"):
         weighted_actions += ["finding_keo"] * 2
+    if actions.get("update_attendance"):
+        # 🆕 Trọng số cao vừa phải: đây là hành vi "mọi member tự cập nhật
+        # trạng thái tới/chưa tới" theo thời gian thực, nên cần chạy đều
+        # đặn hơn create_invite/finding_keo nhưng không cần dày bằng chat.
+        weighted_actions += ["update_attendance"] * 5
 
     if not weighted_actions:
         logging.error("Không có action nào được bật trong actions_enabled.")

@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="0207327f-d58a-4b79-9be3-a108d04caad0" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/config.json" afterPath="$PROJECT_DIR$/config.json" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/simulate.py" afterPath="$PROJECT_DIR$/simulate.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -18,8 +19,8 @@
       <file leaf-file-name="config.json" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/config.json">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="312">
-              <caret line="470" column="1" lean-forward="false" selection-start-line="470" selection-start-column="1" selection-end-line="470" selection-end-column="1" />
+            <state relative-caret-position="2482">
+              <caret line="146" column="1" lean-forward="false" selection-start-line="146" selection-start-column="1" selection-end-line="146" selection-end-column="1" />
               <folding />
             </state>
           </provider>
@@ -38,9 +39,11 @@
       <file leaf-file-name="config - Copy.json" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/config - Copy.json">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="119">
-              <caret line="7" column="6" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="470" selection-end-column="1" />
-              <folding />
+            <state relative-caret-position="85">
+              <caret line="346" column="20" lean-forward="true" selection-start-line="3" selection-start-column="1" selection-end-line="346" selection-end-column="20" />
+              <folding>
+                <element signature="e#208#5687#0" expanded="false" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -49,7 +52,7 @@
         <entry file="file://$PROJECT_DIR$/simulate.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="338">
-              <caret line="1409" column="10" lean-forward="false" selection-start-line="1409" selection-start-column="10" selection-end-line="1409" selection-end-column="10" />
+              <caret line="1545" column="10" lean-forward="false" selection-start-line="1545" selection-start-column="10" selection-end-line="1545" selection-end-column="10" />
               <folding />
             </state>
           </provider>
@@ -72,8 +75,8 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/config.json" />
         <option value="$PROJECT_DIR$/simulate.py" />
+        <option value="$PROJECT_DIR$/config.json" />
       </list>
     </option>
   </component>
@@ -150,12 +153,12 @@
       <updated>1785309385305</updated>
       <workItem from="1785309386599" duration="2414000" />
       <workItem from="1785468171344" duration="1704000" />
-      <workItem from="1785504688215" duration="607000" />
+      <workItem from="1785504688215" duration="2368000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="4725000" />
+    <option name="totallyTimeSpent" value="6486000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="744" extended-state="0" />
@@ -239,26 +242,28 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/simulate.py">
+    <entry file="file://$PROJECT_DIR$/config - Copy.json">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="338">
-          <caret line="1409" column="10" lean-forward="false" selection-start-line="1409" selection-start-column="10" selection-end-line="1409" selection-end-column="10" />
-          <folding />
+        <state relative-caret-position="85">
+          <caret line="346" column="20" lean-forward="true" selection-start-line="3" selection-start-column="1" selection-end-line="346" selection-end-column="20" />
+          <folding>
+            <element signature="e#208#5687#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/config - Copy.json">
+    <entry file="file://$PROJECT_DIR$/simulate.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="7" column="6" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="470" selection-end-column="1" />
+        <state relative-caret-position="338">
+          <caret line="1545" column="10" lean-forward="false" selection-start-line="1545" selection-start-column="10" selection-end-line="1545" selection-end-column="10" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/config.json">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="312">
-          <caret line="470" column="1" lean-forward="false" selection-start-line="470" selection-start-column="1" selection-end-line="470" selection-end-column="1" />
+        <state relative-caret-position="2482">
+          <caret line="146" column="1" lean-forward="false" selection-start-line="146" selection-start-column="1" selection-end-line="146" selection-end-column="1" />
           <folding />
         </state>
       </provider>

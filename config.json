@@ -1,6 +1,7 @@
 {
   "base_url": "https://spiritwebs.okinawanew.com",
   "_comment_accounts": "Điền username/password của các tài khoản test đã có sẵn trên site test. Script sẽ tự login lấy JWT cho từng người.",
+
   "accounts": [
     {
       "username": "duonganh",
@@ -445,7 +446,8 @@
     "join_invite": true,
     "send_chat": true,
     "group_chat": true,
-    "finding_keo": true
+    "finding_keo": true,
+    "update_attendance": true
   },
   "_comment_num_rounds": "0 hoặc số âm = chạy VÔ HẠN (không tự dừng). Đặt số dương (vd 80) nếu chỉ muốn test 1 lượt rồi thôi.",
   "num_rounds": 0,
