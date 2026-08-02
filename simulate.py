@@ -1462,7 +1462,7 @@ def main():
     if actions.get("join_invite"):
         weighted_actions += ["join_invite"] * 6
     if actions.get("send_chat"):
-        weighted_actions += ["send_chat"] * 4
+        weighted_actions += ["send_chat"] * 1
     if actions.get("group_chat"):
         weighted_actions += ["group_chat"] * 6
     if actions.get("finding_keo"):
