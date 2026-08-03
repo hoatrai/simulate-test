@@ -1,7 +1,6 @@
 {
   "base_url": "https://spiritwebs.okinawanew.com",
   "_comment_accounts": "Điền username/password của các tài khoản test đã có sẵn trên site test. Script sẽ tự login lấy JWT cho từng người.",
-
   "accounts": [
     {
       "username": "duonganh",
@@ -344,6 +343,7 @@
       "password": "1"
     }
   ],
+
   "_comment_products": "Danh sách product_id (kèo) đã tồn tại sẵn trên site (WooCommerce product), dùng để tạo invite. Nếu để trống, script sẽ bỏ qua hành vi 'tạo kèo mới' và chỉ join các invite đang mở sẵn.",
   "product_ids": [],
   "_comment_existing_invites": "Nếu anh đã biết sẵn 1 vài invite_id đang mở trên site test, điền vào đây để script chắc chắn có cái để join/chat ngay từ round đầu (không phải chờ ai đó tạo kèo trước).",
@@ -452,9 +452,9 @@
   "_comment_num_rounds": "0 hoặc số âm = chạy VÔ HẠN (không tự dừng). Đặt số dương (vd 80) nếu chỉ muốn test 1 lượt rồi thôi.",
   "num_rounds": 0,
   "_comment_concurrent_workers": "Số 'worker' chạy song song (mỗi worker giả lập độc lập, giống nhiều người dùng thật cùng online 1 lúc). Tăng lên để thấy nhiều hành động chồng lấn/xôm hơn; giảm xuống nếu sợ dội quá nhiều request cùng lúc vào site test. Tự động không vượt quá số tài khoản login được.",
-  "concurrent_workers": 30,
-  "delay_seconds_min": 2,
-  "delay_seconds_max": 6,
+  "concurrent_workers": 15,
+  "delay_seconds_min": 5,
+  "delay_seconds_max": 12,
   "_comment_center": "Toạ độ trung tâm Quận 7 (Phú Mỹ Hưng khu vực), bán kính jitter thu hẹp lại cho tọa độ random rơi đúng trong phạm vi Q7 thay vì lan ra cả TP.",
   "hcmc_center": {
     "lat": 10.7411,
@@ -467,9 +467,9 @@
   "websocket_url": "wss://socket.okinawanew.com/socket/websocket?vsn=2.0.0",
   "map_presence_enabled": true,
   "_comment_map_presence_worker_count": "Số user (trong số accounts đã login) sẽ giữ socket sống + hiện trên map cùng lúc. Độc lập với concurrent_workers (đó là số worker cho action REST tạo kèo/chat/join).",
-  "map_presence_worker_count": 30,
+  "map_presence_worker_count": 10,
   "_comment_map_presence_update_interval": "Chu kỳ (giây) mỗi bot gửi lại toạ độ mới lên server, giả lập như đang di chuyển nhẹ quanh khu vực.",
-  "map_presence_update_interval_seconds": 25,
+  "map_presence_update_interval_seconds": 60,
 
   "_comment_map_presence_group_ratio": "🆕 Tỉ lệ (0.0-1.0) số user map-presence sẽ được ghép thành 'nhóm bạn' (2-4 người) cùng hẹn hội tụ về 1 điểm chung trong cùng 1 quận, thay vì mỗi người đi lang thang riêng lẻ. Phần còn lại vẫn đi solo như bình thường. 0 = tắt hẳn tính năng nhóm.",
   "map_presence_group_ratio": 0.5,
