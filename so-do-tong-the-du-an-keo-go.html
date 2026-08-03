@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sơ đồ tổng thể dự án — Kèo / SpiritWebs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #17130f;
+    --bg-soft:#1e1811;
+    --card:#241d15;
+    --card-hover:#2b2318;
+    --line:#3a2f20;
+    --text:#f3ead9;
+    --muted:#a99a80;
+    --muted2:#7d715c;
+
+    --wp:#5aa9c9;      /* WordPress = xanh nước - "vòi bia" nhạt */
+    --wp-soft:rgba(90,169,201,0.12);
+    --phx:#e8722c;     /* Phoenix = cam lửa phượng hoàng */
+    --phx-soft:rgba(232,114,44,0.13);
+    --flt:#e8b23d;     /* Flutter/App = vàng hổ phách - màu bia */
+    --flt-soft:rgba(232,178,61,0.14);
+    --ai:#b47cd6;       /* AI accent */
+
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(232,114,44,0.10), transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, rgba(90,169,201,0.08), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:28px 20px 80px;
+  }
+  h1,h2,h3{font-family:'Fraunces',serif; margin:0;}
+  code, .mono{font-family:'JetBrains Mono',monospace;}
+
+  /* ---------- Header ---------- */
+  .hero{max-width:1180px;margin:0 auto 30px;}
+  .eyebrow{
+    display:flex;align-items:center;gap:8px;
+    color:var(--phx); font-family:'JetBrains Mono',monospace; font-size:12.5px;
+    letter-spacing:.12em; text-transform:uppercase; margin-bottom:14px;
+  }
+  .eyebrow::before{content:"";width:22px;height:1px;background:var(--phx);display:inline-block;}
+  .hero h1{font-size:clamp(30px,4.2vw,46px); font-weight:600; line-height:1.08; letter-spacing:-.01em;}
+  .hero h1 em{font-style:italic; color:var(--flt); font-weight:500;}
+  .hero p.sub{color:var(--muted); font-size:15.5px; max-width:720px; margin-top:12px; line-height:1.6;}
+  .domains{display:flex; flex-wrap:wrap; gap:10px; margin-top:18px;}
+  .domain-chip{
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text);
+    background:var(--card); border:1px solid var(--line); border-radius:999px;
+    padding:6px 12px; display:flex; align-items:center; gap:7px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+
+  .stats{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px;}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 16px; min-width:108px;}
+  .stat b{display:block; font-family:'Fraunces',serif; font-size:22px; font-weight:600;}
+  .stat span{font-size:11.5px; color:var(--muted2); text-transform:uppercase; letter-spacing:.06em;}
+
+  /* ---------- Controls ---------- */
+  .controls{
+    max-width:1180px;margin:26px auto 8px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  }
+  #search{
+    flex:1; min-width:220px; background:var(--card); border:1px solid var(--line); color:var(--text);
+    padding:11px 14px; border-radius:10px; font-family:'Inter'; font-size:14px; outline:none;
+  }
+  #search:focus{border-color:var(--flt);}
+  .btn{
+    background:var(--card); border:1px solid var(--line); color:var(--muted); font-size:12.5px;
+    padding:9px 13px; border-radius:9px; cursor:pointer; font-family:'Inter'; font-weight:500;
+    transition:.15s;
+  }
+  .btn:hover{color:var(--text); border-color:var(--flt); background:var(--card-hover);}
+  .no-results{max-width:1180px;margin:20px auto; color:var(--muted2); font-size:13.5px; display:none;}
+
+  /* ---------- Flow overview ---------- */
+  .flow-wrap{max-width:1180px; margin:30px auto; background:var(--bg-soft); border:1px solid var(--line); border-radius:18px; padding:26px 22px;}
+  .flow-wrap h2{font-size:16px; color:var(--muted); font-weight:500; font-family:'Inter'; text-transform:uppercase; letter-spacing:.07em; margin-bottom:18px;}
+  svg{width:100%; height:auto; display:block;}
+  .flow-label{font-family:'JetBrains Mono',monospace; font-size:10.5px; fill:var(--muted);}
+  .flow-legend{display:flex; flex-wrap:wrap; gap:16px; margin-top:16px; font-size:12px; color:var(--muted);}
+  .flow-legend .item{display:flex; align-items:center; gap:7px;}
+  .flow-legend svg{width:26px;height:8px;}
+
+  /* ---------- Lanes ---------- */
+  .lanes{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:repeat(3,1fr); gap:20px; align-items:start;}
+  @media (max-width:980px){.lanes{grid-template-columns:1fr;}}
+
+  .lane{background:var(--bg-soft); border:1px solid var(--line); border-radius:18px; overflow:hidden;}
+  .lane-head{padding:18px 18px 14px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg-soft); z-index:2;}
+  .lane-head .tag{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase; margin-bottom:6px; display:flex; align-items:center; gap:7px;}
+  .lane-head h3{font-size:20px; font-weight:600;}
+  .lane-head .desc{color:var(--muted); font-size:12.5px; margin-top:5px; line-height:1.5;}
+  .lane-toggle{margin-top:10px;}
+
+  .lane-body{padding:14px 14px 18px; display:flex; flex-direction:column; gap:14px;}
+  .group-label{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted2); margin:6px 4px 0; font-family:'JetBrains Mono',monospace;}
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;
+    transition:border-color .15s, background .15s;
+  }
+  .card.hidden{display:none;}
+  .card:hover{border-color:var(--line-hover, #4a3c28);}
+  .card-head{
+    padding:11px 13px; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;
+    user-select:none;
+  }
+  .card-head:hover{background:var(--card-hover);}
+  .card-file{font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:500;}
+  .card-desc{font-size:12px; color:var(--muted); margin-top:3px; line-height:1.45;}
+  .chev{width:9px;height:9px; border-right:1.6px solid var(--muted2); border-bottom:1.6px solid var(--muted2); transform:rotate(-45deg); transition:transform .18s; flex-shrink:0; margin-top:2px;}
+  .card.open .chev{transform:rotate(45deg);}
+  .card-body{max-height:0; overflow:hidden; transition:max-height .22s ease;}
+  .card-body-inner{padding:0 13px 13px;}
+  .route-list{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:5px;}
+  .route-list li{
+    font-family:'JetBrains Mono',monospace; font-size:11.3px; color:var(--text);
+    background:rgba(255,255,255,0.03); border:1px solid var(--line); border-radius:6px;
+    padding:5px 9px; display:flex; gap:8px; align-items:baseline;
+  }
+  .method{font-size:9.5px; font-weight:700; letter-spacing:.03em; padding:1px 5px; border-radius:4px; flex-shrink:0;}
+  .m-get{color:#7fd1a3; background:rgba(127,209,163,.12);}
+  .m-post{color:#e8b23d; background:rgba(232,178,61,.12);}
+  .m-ws{color:#e8722c; background:rgba(232,114,44,.12);}
+  .m-note{color:#a99a80; background:rgba(169,154,128,.1); font-style:italic;}
+  .note-line{font-size:11.5px; color:var(--muted); margin-top:8px; line-height:1.5; border-left:2px solid var(--line); padding-left:9px;}
+
+  footer{max-width:1180px; margin:50px auto 0; color:var(--muted2); font-size:12px; text-align:center; line-height:1.7;}
+  footer b{color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="eyebrow">Kiến trúc hệ thống · 3 tầng</div>
+  <h1>Sơ đồ tổng thể dự án <em>"Kèo"</em></h1>
+  <p class="sub">Ứng dụng mạng xã hội rủ nhậu / kết bạn thời gian thực. Toàn bộ code được quét trực tiếp từ file bạn tải lên (không phỏng đoán): plugin WordPress <b>Custom API Core</b>, server realtime <b>Phoenix (Elixir)</b>, và app <b>Flutter</b>. Bấm vào từng thẻ để xem chi tiết route / class / mục đích. Dùng ô tìm kiếm để lọc theo tên file, route hoặc từ khoá.</p>
+  <div class="domains">
+    <span class="domain-chip"><span class="dot" style="background:var(--wp)"></span>spiritwebs.okinawanew.com — WordPress + WooCommerce</span>
+    <span class="domain-chip"><span class="dot" style="background:var(--phx)"></span>socket.okinawanew.com — Phoenix realtime</span>
+    <span class="domain-chip"><span class="dot" style="background:var(--flt)"></span>keogo — Flutter app (iOS/Android)</span>
+  </div>
+  <div class="stats" id="statsBar"></div>
+</div>
+
+<div class="controls">
+  <input id="search" type="text" placeholder="Tìm theo tên file, route, tính năng… (vd: invite, chat, jwt, video call)"/>
+  <button class="btn" id="expandAll">Mở tất cả</button>
+  <button class="btn" id="collapseAll">Thu gọn tất cả</button>
+</div>
+<div class="no-results" id="noResults">Không tìm thấy mục nào khớp.</div>
+
+<div class="flow-wrap">
+  <h2>Luồng dữ liệu tổng quát</h2>
+  <svg viewBox="0 0 1100 300" id="flowSvg">
+    <defs>
+      <marker id="arrow-wp" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#5aa9c9"/></marker>
+      <marker id="arrow-phx" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#e8722c"/></marker>
+      <marker id="arrow-flt" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#e8b23d"/></marker>
+      <marker id="arrow-ai" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#b47cd6"/></marker>
+    </defs>
+
+    <!-- nodes -->
+    <g>
+      <rect x="20" y="110" width="230" height="80" rx="12" fill="#1e1811" stroke="#5aa9c9" stroke-width="1.4"/>
+      <text x="135" y="145" text-anchor="middle" fill="#f3ead9" font-family="Fraunces,serif" font-size="16" font-weight="600">WordPress</text>
+      <text x="135" y="165" text-anchor="middle" class="flow-label">custom-api-core + WooCommerce</text>
+    </g>
+    <g>
+      <rect x="435" y="20" width="230" height="80" rx="12" fill="#1e1811" stroke="#e8722c" stroke-width="1.4"/>
+      <text x="550" y="55" text-anchor="middle" fill="#f3ead9" font-family="Fraunces,serif" font-size="16" font-weight="600">Phoenix Server</text>
+      <text x="550" y="75" text-anchor="middle" class="flow-label">Channels · REST /api · SpiritAi</text>
+    </g>
+    <g>
+      <rect x="850" y="110" width="230" height="80" rx="12" fill="#1e1811" stroke="#e8b23d" stroke-width="1.4"/>
+      <text x="965" y="145" text-anchor="middle" fill="#f3ead9" font-family="Fraunces,serif" font-size="16" font-weight="600">Flutter App</text>
+      <text x="965" y="165" text-anchor="middle" class="flow-label">keogo — iOS / Android</text>
+    </g>
+    <g>
+      <rect x="435" y="220" width="230" height="66" rx="12" fill="#1e1811" stroke="#b47cd6" stroke-width="1.4" stroke-dasharray="3,3"/>
+      <text x="550" y="248" text-anchor="middle" fill="#f3ead9" font-family="Fraunces,serif" font-size="15" font-weight="600">SpiritAi</text>
+      <text x="550" y="266" text-anchor="middle" class="flow-label">GPT: chat / invite-ai / landing</text>
+    </g>
+
+    <!-- edges -->
+    <path d="M250,140 C 320,120 380,130 435,90" fill="none" stroke="#5aa9c9" stroke-width="1.6" marker-end="url(#arrow-wp)"/>
+    <text x="310" y="112" class="flow-label">webhook POST /api/* (x-api-key)</text>
+
+    <path d="M665,70 C 760,80 800,110 850,135" fill="none" stroke="#e8722c" stroke-width="1.6" marker-end="url(#arrow-phx)"/>
+    <text x="700" y="100" class="flow-label">FCM push (Notifications)</text>
+
+    <path d="M250,160 C 500,230 700,230 850,165" fill="none" stroke="#e8b23d" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#arrow-flt)"/>
+    <text x="480" y="223" class="flow-label">REST /wp-json (nhau/v1, custom/v1, wc/v3) — HTTPS</text>
+
+    <path d="M850,150 C 700,20 400,10 250,120" fill="none" stroke="#e8722c" stroke-width="1.6" stroke-dasharray="2,3" marker-end="url(#arrow-phx)"/>
+    <text x="480" y="30" class="flow-label">wss:// socket/websocket — Phoenix Channels realtime</text>
+
+    <path d="M850,175 C 760,205 700,205 665,232" fill="none" stroke="#e8722c" stroke-width="1.6" marker-end="url(#arrow-phx)"/>
+    <text x="700" y="205" class="flow-label" text-anchor="middle">REST /api (jwt, broadcast, invite-ai)</text>
+
+    <path d="M550,220 C 550,180 550,120 550,100" fill="none" stroke="#b47cd6" stroke-width="1.6" stroke-dasharray="2,3" marker-end="url(#arrow-ai)"/>
+  </svg>
+  <div class="flow-legend">
+    <div class="item"><svg><line x1="0" y1="4" x2="26" y2="4" stroke="#5aa9c9" stroke-width="2"/></svg> WordPress → Phoenix (webhook nội bộ, có api-key)</div>
+    <div class="item"><svg><line x1="0" y1="4" x2="26" y2="4" stroke="#e8722c" stroke-width="2"/></svg> Phoenix → Flutter (FCM / socket realtime)</div>
+    <div class="item"><svg><line x1="0" y1="4" x2="26" y2="4" stroke="#e8b23d" stroke-width="2" stroke-dasharray="4,3"/></svg> Flutter ↔ WordPress (REST wp-json)</div>
+    <div class="item"><svg><line x1="0" y1="4" x2="26" y2="4" stroke="#e8722c" stroke-width="2" stroke-dasharray="2,3"/></svg> Flutter ↔ Phoenix (WebSocket + REST)</div>
+    <div class="item"><svg><line x1="0" y1="4" x2="26" y2="4" stroke="#b47cd6" stroke-width="2" stroke-dasharray="2,3"/></svg> Phoenix ↔ SpiritAi (AI content generation)</div>
+  </div>
+</div>
+
+<div class="lanes" id="lanes"></div>
+
+<footer>
+  Được tạo tự động từ nội dung <b>allproject.zip</b> (custom-api-core, lib_phoenix, keogo) — mọi route, channel, file liệt kê ở trên lấy trực tiếp từ mã nguồn đã tải lên.<br/>
+  Bấm tiêu đề mỗi thẻ để mở/thu gọn chi tiết. Dùng thanh tìm kiếm phía trên để lọc nhanh trong hơn 120 file.
+</footer>
+
+<script>
+const DATA = [
+  {
+    id:'wp', name:'WordPress Backend', color:'var(--wp)', colorHex:'#5aa9c9',
+    tag:'PHP · WooCommerce · REST API', domain:'spiritwebs.okinawanew.com',
+    desc:'Plugin "Custom API Core" nạp các module REST riêng lẻ (namespace nhau/v1, custom/v1, spiritwebs/v1) cộng với WooCommerce REST (wc/v3) — mỗi "kèo" (buổi nhậu) thực chất là 1 sản phẩm WooCommerce.',
+    groups:[
+      {
+        label:'Bootstrap',
+        items:[
+          {file:'custom-api-core.php', desc:'File chính của plugin — require toàn bộ 13 module bên dưới.', routes:[{m:'note', t:'require_once modules/*.php'}]},
+          {file:'functions.php', desc:'Theme functions.php — hook/tiện ích dùng chung cho theme WordPress.', routes:[{m:'note', t:'WordPress theme hooks'}]},
+          {file:'wc/v3/products (WooCommerce)', desc:'Nguồn dữ liệu "kèo" chính — Flutter đọc danh sách/chi tiết kèo qua WooCommerceConfig (consumer key/secret) trong app.', routes:[{m:'get', t:'GET /wp-json/wc/v3/products'}]},
+        ]
+      },
+      {
+        label:'Modules — /wp-json',
+        items:[
+          {file:'finding-keo.php', desc:'"Tìm kèo quanh đây" — bật/tắt chế độ tìm, cập nhật vị trí realtime, xem trạng thái, tìm người gần đó.', routes:[
+            {m:'post', t:'/custom/v1/finding-keo/on'},
+            {m:'post', t:'/custom/v1/finding-keo/off'},
+            {m:'post', t:'/custom/v1/finding-keo/update-location'},
+            {m:'get', t:'/custom/v1/finding-keo/status'},
+            {m:'get', t:'/custom/v1/finding-keo/nearby'},
+          ]},
+          {file:'invite-api.php', desc:'Module lớn nhất — toàn bộ vòng đời "lời mời / kèo": tạo, tham gia, rời, kick, đóng/mở, điểm hẹn, vị trí live, media ảnh/video, viewer, đánh giá độ tin cậy, thống kê user.', routes:[
+            {m:'get', t:'/nhau/v1/invite/by-product'},
+            {m:'post', t:'/nhau/v1/invite/create'},
+            {m:'get', t:'/nhau/v1/invite/detail'},
+            {m:'post', t:'/nhau/v1/invite/join'},
+            {m:'post', t:'/nhau/v1/invite/leave'},
+            {m:'post', t:'/nhau/v1/invite/kick'},
+            {m:'post', t:'/nhau/v1/invite/close'},
+            {m:'post', t:'/nhau/v1/invite/open'},
+            {m:'post', t:'/nhau/v1/rating/trust'},
+            {m:'post', t:'/nhau/v1/invite/meeting-point'},
+            {m:'post', t:'/nhau/v1/invite/location/update'},
+            {m:'get', t:'/nhau/v1/invite/location/list'},
+            {m:'post', t:'/nhau/v1/invite/update-attendance'},
+            {m:'get', t:'/nhau/v1/random-images'},
+            {m:'post', t:'/spiritwebs/v1/send-invite'},
+            {m:'get', t:'/spiritwebs/v1/random-pub'},
+            {m:'post', t:'/nhau/v1/invite/viewer-join'},
+            {m:'post', t:'/nhau/v1/invite/viewer-leave'},
+            {m:'post', t:'/nhau/v1/invite/media/add'},
+            {m:'get', t:'/nhau/v1/invite/media'},
+            {m:'post', t:'/nhau/v1/upload'},
+            {m:'post', t:'/nhau/v1/invite/media/delete'},
+            {m:'get', t:'/nhau/v1/user-stats/{user_id}'},
+            {m:'get', t:'/nhau/v1/user-stats-bulk'},
+            {m:'get', t:'/nhau/v1/products-status'},
+            {m:'get', t:'/nhau/v1/invite/by-products'},
+          ]},
+          {file:'my-keo.php', desc:'Danh sách các kèo mà user đang tham gia / sở hữu.', routes:[{m:'get', t:'/nhau/v1/my-keo'}]},
+          {file:'report-block.php', desc:'Báo cáo vi phạm và chặn/bỏ chặn người dùng.', routes:[
+            {m:'post', t:'/nhau/v1/report'},
+            {m:'post', t:'/nhau/v1/block'},
+            {m:'post', t:'/nhau/v1/unblock'},
+            {m:'get', t:'/nhau/v1/blocked-list'},
+          ]},
+          {file:'auth-account.php', desc:'Quên mật khẩu qua OTP, đặt lại mật khẩu, xoá tài khoản (yêu cầu App Store/Play Store).', routes:[
+            {m:'post', t:'/nhau/v1/forgot-password'},
+            {m:'post', t:'/nhau/v1/reset-password'},
+            {m:'post', t:'/nhau/v1/delete-account'},
+          ]},
+          {file:'message-stats.php', desc:'Thống kê số tin nhắn (không lộ nội dung) + cấp "vé" (ticket) để admin join socket channel admin:activity.', routes:[
+            {m:'get', t:'/nhau/v1/admin/message-stats'},
+            {m:'post', t:'/nhau/v1/admin/socket-ticket'},
+          ]},
+          {file:'refresh-token-lite.php', desc:'Cấp & làm mới refresh token dạng nhẹ (JWT lite) cho phiên đăng nhập dài hạn.', routes:[
+            {m:'post', t:'/nhau/v1/issue-refresh-token'},
+            {m:'post', t:'/nhau/v1/refresh-token'},
+          ]},
+          {file:'slideshow-video.php', desc:'Chạy nền qua WP-Cron: khi tạo kèo không có video thật → tự ghép slideshow từ ảnh đã chọn + nhạc random, lưu lại vào meta "videos" của product để newsfeed hiển thị y như video thật.', routes:[{m:'note', t:'WP-Cron job, không có REST route riêng'}]},
+          {file:'party-games.php', desc:'Trò chơi bàn nhậu: vòng quay may rủi, "chưa từng", thật hay thách, xúc xắc phạt.', routes:[
+            {m:'post', t:'/spiritwebs/v1/spin'},
+            {m:'get', t:'/nhau/v1/game/never-have-i-ever'},
+            {m:'get', t:'/nhau/v1/game/truth-or-dare'},
+            {m:'post', t:'/nhau/v1/game/dice-roll'},
+          ]},
+          {file:'keo-priority-sort.php', desc:'Sort danh sách kèo ngay ở backend cho Shop page: ưu tiên đang live + đông người (≥60% slot) > đang live > sắp diễn ra (trong 24h) > còn xa. Trước đây Flutter tự sort client-side, nay chuyển hẳn về server để nhất quán.', routes:[{m:'note', t:'Hook filter WooCommerce, không có REST route riêng'}]},
+          {file:'admin-user-list.php', desc:'Danh sách người dùng cho trang quản trị admin.', routes:[{m:'get', t:'/nhau/v1/admin/users'}]},
+          {file:'shop-feed.php', desc:'Newsfeed tổng hợp sản phẩm/kèo cho tab Shop.', routes:[{m:'get', t:'/nhau/v1/shop-feed'}]},
+          {file:'test.php (seed-bot-users.php)', desc:'Script CLI chỉ dùng dev/staging: sinh hàng loạt user ảo để test (--user_count=100, --cleanup=1).', routes:[{m:'note', t:'php seed-bot-users.php --user_count=100'}]},
+        ]
+      }
+    ]
+  },
+  {
+    id:'phx', name:'Phoenix Realtime Server', color:'var(--phx)', colorHex:'#e8722c',
+    tag:'Elixir · Phoenix Channels · LiveView · OTP', domain:'socket.okinawanew.com',
+    desc:'Server Elixir/Phoenix giữ toàn bộ kết nối WebSocket realtime, nhận webhook nội bộ từ WordPress để phát broadcast + đẩy FCM, và tích hợp AI (SpiritAi) để sinh nội dung.',
+    groups:[
+      {
+        label:'REST Controllers — /api',
+        items:[
+          {file:'wordpress_controller.ex', desc:'Nhận webhook từ WordPress (xác thực bằng header x-api-key) rồi broadcast realtime qua channel tương ứng + gửi FCM cho user offline. Đây là "cầu nối" chính giữa WordPress và Phoenix.', routes:[
+            {m:'post', t:'/api/new_product → broadcast products:lobby'},
+            {m:'post', t:'/api/join_invite'},
+            {m:'post', t:'/api/new_chat_message → room:chat_* + FCM'},
+            {m:'post', t:'/api/send_invite'},
+            {m:'post', t:'/api/new_group_chat_message'},
+            {m:'post', t:'/api/invite/user-joined | user-left | user-kicked'},
+            {m:'post', t:'/api/invite/closed | opened | attendance-updated'},
+            {m:'post', t:'/api/invite/viewer-join | viewer-leave'},
+            {m:'post', t:'/api/finding-keo/on | off'},
+            {m:'post', t:'/api/register_admin_ticket'},
+            {m:'post', t:'/api/admin_chat_activity'},
+          ]},
+          {file:'api_controller.ex', desc:'Broadcast thủ công tới một channel bất kỳ.', routes:[{m:'post', t:'/api/broadcast'}]},
+          {file:'token_controller.ex', desc:'Cấp JWT token cho client (Flutter) xác thực khi kết nối socket.', routes:[{m:'get', t:'/api/get-jwt-token'}]},
+          {file:'invite_ai_controller.ex', desc:'Gọi SpiritAi.InviteAi để AI tự sinh nội dung lời mời (tiêu đề, mô tả, giá, địa điểm…) trả JSON.', routes:[{m:'post', t:'/api/invite-ai'}]},
+          {file:'login_controller.ex', desc:'Lấy danh sách phiên đăng nhập hiện tại.', routes:[{m:'get', t:'/api/logins'}]},
+          {file:'page_controller.ex', desc:'Trang chủ mặc định (browser route).', routes:[{m:'get', t:'/ (index)'}]},
+          {file:'error_json.ex', desc:'Định dạng JSON lỗi chuẩn cho toàn bộ API (404, 500…).', routes:[{m:'note', t:'error view/formatter'}]},
+        ]
+      },
+      {
+        label:'WebSocket Channels — UserSocket',
+        items:[
+          {file:'room_channel.ex', desc:'Chat 1-1 theo cặp user, topic dạng room:chat_{id1}_{id2}.', routes:[{m:'ws', t:'room:chat_*'}]},
+          {file:'site_visit_channel.ex', desc:'Theo dõi lượt truy cập site realtime.', routes:[{m:'ws', t:'site:visit'}]},
+          {file:'row_channel.ex', desc:'Channel danh sách "rows" (dữ liệu bảng realtime).', routes:[{m:'ws', t:'rows:lobby'}]},
+          {file:'online_channel.ex', desc:'Trạng thái online chung.', routes:[{m:'ws', t:'online:lobby'}]},
+          {file:'crypto_channel.ex', desc:'Kênh dữ liệu liên quan Market/crypto (xem context market.ex).', routes:[{m:'ws', t:'crypto:lobby'}]},
+          {file:'product_channel.ex', desc:'Phát realtime khi có sản phẩm/kèo mới từ WordPress.', routes:[{m:'ws', t:'products:lobby'}]},
+          {file:'chat_room_channel.ex', desc:'Phòng chat mở rộng (khác room_channel — dùng cho nhóm chat lớn hơn).', routes:[{m:'ws', t:'chat_room:*'}]},
+          {file:'group_chat_channel.ex', desc:'Chat nhóm cho từng "kèo" — tin nhắn, thành viên vào/ra.', routes:[{m:'ws', t:'group_chat:*'}]},
+          {file:'invite_channel.ex', desc:'Realtime cho 1 lời mời cụ thể: user tham gia/rời, cập nhật vị trí live, viewer.', routes:[{m:'ws', t:'invite:*'}]},
+          {file:'online_users_channel.ex', desc:'Danh sách user đang online toàn hệ thống.', routes:[{m:'ws', t:'online_users:lobby'}]},
+          {file:'admin_activity_channel.ex', desc:'Kênh riêng cho admin theo dõi hoạt động chat realtime (không lộ nội dung) — bắt buộc kèm ticket hợp lệ do WordPress cấp qua /admin/socket-ticket.', routes:[{m:'ws', t:'admin:activity (cần ticket)'}]},
+          {file:'presence_channel.ex + presence.ex', desc:'Theo dõi presence (ai đang online/offline) dùng Phoenix.Presence.', routes:[{m:'note', t:'Phoenix.Presence tracking'}]},
+          {file:'user_socket.ex', desc:'Điểm vào kết nối socket: xác thực visitor ẩn danh hoặc user đăng nhập (username/email), gán id "users_socket:{email}", đăng ký toàn bộ 11 channel ở trên.', routes:[{m:'note', t:'wss://socket.okinawanew.com/socket/websocket'}]},
+        ]
+      },
+      {
+        label:'LiveView & Router',
+        items:[
+          {file:'router.ex', desc:'Định tuyến chính: pipeline :api (JSON) cho /api/*, pipeline :browser cho trang HTML + LiveView, route /dev cho dashboard khi dev.', routes:[{m:'note', t:'scope /api · scope / · scope /dev'}]},
+          {file:'live/chat_live.ex', desc:'Trang chat dạng LiveView (server-rendered realtime), truy cập qua trình duyệt.', routes:[{m:'get', t:'/chat (LiveView)'}]},
+          {file:'live/quiz_live.ex', desc:'Trang quiz/trò chơi dạng LiveView.', routes:[{m:'get', t:'/quiz (LiveView)'}]},
+          {file:'live/landing_live.ex', desc:'LiveView cho landing page do AI tạo (kết hợp SpiritAi.Landing).', routes:[{m:'note', t:'LiveView, gắn với SpiritAi.Landing'}]},
+          {file:'endpoint.ex + application.ex', desc:'Điểm khởi động OTP application + cấu hình endpoint HTTP/WS.', routes:[{m:'note', t:'OTP supervision tree'}]},
+        ]
+      },
+      {
+        label:'Contexts / OTP modules',
+        items:[
+          {file:'logins.ex', desc:'Context quản lý phiên đăng nhập hiện có trong hệ thống.', routes:[]},
+          {file:'mailer.ex', desc:'Gửi email (Swoosh) — vd OTP quên mật khẩu.', routes:[]},
+          {file:'notifications.ex', desc:'Trung tâm gửi Firebase Cloud Messaging: send_new_product_notification, send_new_chat_notification… tới Flutter khi user offline.', routes:[]},
+          {file:'user_login_storage.ex', desc:'Lưu trữ trạng thái đăng nhập user phía server.', routes:[]},
+          {file:'market/market.ex, order.ex, trade.ex', desc:'Context "Market" — quản lý order & trade (liên quan crypto_channel.ex, có thể là tính năng giao dịch/điểm thưởng).', routes:[]},
+          {file:'spirit_webs/token_manager.ex', desc:'Quản lý vòng đời JWT token cấp cho client.', routes:[]},
+        ]
+      },
+      {
+        label:'SpiritAi — tích hợp AI',
+        items:[
+          {file:'spirit_ai/chat.ex', desc:'Chatbot AI tư vấn kỹ thuật SpiritWebs (web, app, VPS, marketing…) — prompt hệ thống chi tiết, luôn đưa gợi ý, không từ chối khách.', routes:[]},
+          {file:'spirit_ai/chat_bk.ex', desc:'Bản backup/cũ của chat.ex (prompt đơn giản hơn).', routes:[]},
+          {file:'spirit_ai/invite_ai.ex', desc:'AI tự sinh nội dung lời mời đi nhậu — trả JSON thuần (title, description, price, slots, address, time…), gọi bởi invite_ai_controller.', routes:[]},
+          {file:'spirit_ai/invite_validator.ex', desc:'Validate JSON do AI trả về có đủ field bắt buộc (title, description, price, slots, address, time, contact, lat, lng, pub_name, images) trước khi dùng.', routes:[]},
+          {file:'spirit_ai/landing.ex', desc:'AI tạo landing page hoàn chỉnh dạng JSON theo ngành nghề/phong cách khách yêu cầu.', routes:[]},
+        ]
+      }
+    ]
+  },
+  {
+    id:'flt', name:'Flutter App "Kèo"', color:'var(--flt)', colorHex:'#e8b23d',
+    tag:'Dart · Flutter · Firebase · WebRTC', domain:'keogo (iOS / Android)',
+    desc:'Client di động — kết nối WordPress qua REST (wp-json) và Phoenix qua WebSocket + REST /api. Có gọi video (WebRTC + CallKit), push FCM, game bàn nhậu, bản đồ tìm kèo quanh đây.',
+    groups:[
+      {
+        label:'Cấu hình & lõi (entrypoint)',
+        items:[
+          {file:'main.dart', desc:'Entrypoint app — khởi tạo Firebase, xử lý FCM background (video_call → hiện màn hình gọi native qua CallkitService; call_cancel → tắt chuông), giữ state global (unreadNotiVN, activeTabIndexVN), cấu hình WooCommerceConfig.', routes:[]},
+          {file:'config/app_config.dart', desc:'Hằng số cấu hình domain: webDomain (spiritwebs.okinawanew.com), socketDomain, websocketUrl (wss://…/socket/websocket), apiUrl (/wp-json), socketApi (/api), link chính sách bảo mật & điều khoản.', routes:[]},
+          {file:'app_globals.dart (root + services/)', desc:'Biến/state toàn cục dùng xuyên suốt app (có bản backup app_globals_bk.dart).', routes:[]},
+          {file:'theme/app_theme.dart', desc:'Định nghĩa theme màu sắc/typography chung cho toàn app.', routes:[]},
+        ]
+      },
+      {
+        label:'Core state',
+        items:[
+          {file:'core/global_user_stream.dart', desc:'Stream phát trạng thái user hiện tại tới toàn bộ widget lắng nghe.', routes:[]},
+          {file:'core/user_cache.dart', desc:'Cache thông tin user để giảm gọi API lặp lại.', routes:[]},
+        ]
+      },
+      {
+        label:'Helpers',
+        items:[
+          {file:'helpers/lifecycle_tracker.dart', desc:'Theo dõi vòng đời app (foreground/background) để điều khiển service nền.', routes:[]},
+          {file:'helpers/storage_helper.dart', desc:'Đọc/ghi local storage (token, cấu hình đã lưu…).', routes:[]},
+          {file:'helpers/user_helper.dart', desc:'Tiện ích thao tác dữ liệu user.', routes:[]},
+        ]
+      },
+      {
+        label:'Services',
+        items:[
+          {file:'services/socket_service.dart', desc:'Client WebSocket kết nối tới Phoenix (phx_join theo topic), lắng nghe event user_joined…, cập nhật ValueNotifier messages/participants toàn app.', routes:[{m:'ws', t:'connect(websocketUrl, topic)'}]},
+          {file:'services/wordpress_service.dart', desc:'Client gọi REST API WordPress (wp-json) — lớp trung gian cho toàn bộ module PHP ở tầng WordPress.', routes:[{m:'get', t:'HTTP client → /wp-json/*'}]},
+          {file:'services/presence_service.dart', desc:'Theo dõi/thông báo trạng thái online của user hiện tại lên server.', routes:[]},
+          {file:'services/global_call_service.dart', desc:'Điều phối trạng thái cuộc gọi video toàn app.', routes:[]},
+          {file:'services/callkit_service.dart', desc:'Hiện màn hình cuộc gọi đến thật (CallKit iOS / full-screen Android) khi có FCM video_call, kể cả máy khoá.', routes:[]},
+          {file:'services/call_foreground_service.dart', desc:'Foreground service Android giữ cuộc gọi/kết nối chạy nền ổn định.', routes:[]},
+          {file:'services/notification_tts_service.dart', desc:'Đọc thông báo bằng giọng nói (text-to-speech) khi có sự kiện quan trọng.', routes:[]},
+          {file:'services/admin_activity_service.dart', desc:'Kết nối channel admin:activity để dashboard admin xem hoạt động realtime.', routes:[]},
+          {file:'services/location_permission_gate.dart', desc:'Quản lý xin quyền vị trí trước khi dùng tính năng tìm kèo/bản đồ.', routes:[]},
+        ]
+      },
+      {
+        label:'Xác thực & Onboarding',
+        items:[
+          {file:'pages/splash_page.dart', desc:'Màn hình khởi động, kiểm tra phiên đăng nhập.', routes:[]},
+          {file:'pages/login_page.dart', desc:'Đăng nhập.', routes:[]},
+          {file:'pages/register_page.dart', desc:'Đăng ký tài khoản.', routes:[]},
+          {file:'pages/forgot_password_page.dart', desc:'Quên mật khẩu — gọi /nhau/v1/forgot-password (OTP).', routes:[]},
+          {file:'pages/set_password_page.dart', desc:'Đặt mật khẩu mới.', routes:[]},
+          {file:'pages/set_dob_page.dart', desc:'Nhập ngày sinh (kiểm tra tuổi).', routes:[]},
+          {file:'pages/age_restricted_page.dart', desc:'Chặn truy cập nếu chưa đủ tuổi (nội dung liên quan rượu bia).', routes:[]},
+        ]
+      },
+      {
+        label:'Newsfeed / Shop / Kèo',
+        items:[
+          {file:'pages/newsfeed_page.dart', desc:'Bảng tin tổng hợp bài đăng/kèo.', routes:[]},
+          {file:'pages/shop_page.dart', desc:'Danh sách kèo dạng shop, đọc /wc/v3/products đã sort sẵn theo keo-priority-sort.php.', routes:[]},
+          {file:'pages/product_detail_page.dart', desc:'Chi tiết 1 kèo (sản phẩm WooCommerce).', routes:[]},
+          {file:'pages/my_keo_page.dart', desc:'Kèo của tôi — gọi /nhau/v1/my-keo.', routes:[]},
+          {file:'pages/keo_room_page.dart', desc:'Phòng của 1 kèo cụ thể khi đang diễn ra.', routes:[]},
+          {file:'pages/spirit_posts_page.dart', desc:'Bài đăng liên quan SpiritWebs.', routes:[]},
+        ]
+      },
+      {
+        label:'Tạo & tham gia lời mời (Invite)',
+        items:[
+          {file:'pages/create_invite_page.dart', desc:'Tạo lời mời mới — có thể gọi AI qua /api/invite-ai để gợi ý nội dung.', routes:[]},
+          {file:'pages/invite_card_page.dart', desc:'Thẻ hiển thị 1 lời mời.', routes:[]},
+          {file:'pages/invite_map_page.dart', desc:'Bản đồ hiển thị các lời mời quanh khu vực.', routes:[]},
+          {file:'pages/map_page_select_location.dart', desc:'Chọn vị trí/điểm hẹn trên bản đồ.', routes:[]},
+          {file:'pages/flutter_map.dart', desc:'Wrapper bản đồ dùng chung.', routes:[]},
+          {file:'pages/near_pub.dart', desc:'Gợi ý quán nhậu gần đây (random-pub).', routes:[]},
+          {file:'pages/group_page.dart', desc:'Danh sách nhóm/kèo nhóm.', routes:[]},
+          {file:'pages/group_detail_page.dart', desc:'Chi tiết 1 nhóm.', routes:[]},
+        ]
+      },
+      {
+        label:'Chat & Xã hội',
+        items:[
+          {file:'pages/chat_list_page.dart', desc:'Danh sách cuộc trò chuyện.', routes:[]},
+          {file:'pages/chat_page.dart', desc:'Chat 1-1 (room:chat_*).', routes:[]},
+          {file:'pages/chat_page_phoenix.dart', desc:'Biến thể trang chat kết nối trực tiếp Phoenix channel.', routes:[]},
+          {file:'pages/group_chat_page.dart', desc:'Chat nhóm (group_chat:*).', routes:[]},
+          {file:'pages/user_list_page.dart', desc:'Danh sách người dùng.', routes:[]},
+          {file:'pages/user_info_page.dart', desc:'Thông tin chi tiết 1 user.', routes:[]},
+          {file:'pages/profile_page.dart', desc:'Trang cá nhân.', routes:[]},
+          {file:'pages/edit_profile_page.dart', desc:'Chỉnh sửa hồ sơ.', routes:[]},
+        ]
+      },
+      {
+        label:'Gọi thoại/video',
+        items:[
+          {file:'pages/video_call_page.dart', desc:'Màn hình gọi video.', routes:[]},
+          {file:'pages/webrtc_call_manager.dart', desc:'Quản lý phiên WebRTC (offer/answer/ICE).', routes:[]},
+          {file:'pages/webrtc_signal_bus.dart', desc:'Kênh trao đổi tín hiệu WebRTC (signaling) qua socket.', routes:[]},
+        ]
+      },
+      {
+        label:'Game bàn nhậu & hiệu ứng',
+        items:[
+          {file:'pages/spin_wheel.dart', desc:'Vòng quay may rủi — gọi /spiritwebs/v1/spin.', routes:[]},
+          {file:'pages/beer_background.dart', desc:'Hiệu ứng nền chủ đề bia.', routes:[]},
+          {file:'pages/black_hole_background.dart', desc:'Hiệu ứng nền hố đen (trang trí/loading).', routes:[]},
+        ]
+      },
+      {
+        label:'Thông báo & Nội dung',
+        items:[
+          {file:'pages/notification_page.dart', desc:'Danh sách thông báo.', routes:[]},
+          {file:'pages/notification_store.dart', desc:'Quản lý state thông báo, đếm unreadNotiVN.', routes:[]},
+          {file:'pages/blog_page.dart + blog_page.dart (root)', desc:'Trang blog.', routes:[]},
+          {file:'pages/blog_detail_page.dart', desc:'Chi tiết bài blog.', routes:[]},
+          {file:'pages/post_detail_page.dart', desc:'Chi tiết bài đăng.', routes:[]},
+          {file:'pages/image_viewer_page.dart', desc:'Xem ảnh phóng to.', routes:[]},
+        ]
+      },
+      {
+        label:'Pháp lý',
+        items:[
+          {file:'pages/legal_page.dart', desc:'Trang thông tin pháp lý chung.', routes:[]},
+          {file:'pages/privacy_policy_page.dart', desc:'Chính sách bảo mật (bắt buộc App Store/Play Store).', routes:[]},
+          {file:'pages/terms_of_service_page.dart', desc:'Điều khoản sử dụng.', routes:[]},
+        ]
+      }
+    ]
+  }
+];
+
+// ---------- Render ----------
+const lanesEl = document.getElementById('lanes');
+const statsBar = document.getElementById('statsBar');
+
+function countAll(){
+  let files=0, routes=0;
+  DATA.forEach(l=>l.groups.forEach(g=>g.items.forEach(it=>{files++; routes+=(it.routes||[]).length;})));
+  return {files, routes};
+}
+const {files, routes} = countAll();
+statsBar.innerHTML = `
+  <div class="stat"><b>3</b><span>Tầng hệ thống</span></div>
+  <div class="stat"><b>${files}</b><span>File / module</span></div>
+  <div class="stat"><b>${routes}</b><span>Route &amp; channel</span></div>
+  <div class="stat"><b>11</b><span>Phoenix Channels</span></div>
+  <div class="stat"><b>49</b><span>REST endpoint WP</span></div>
+`;
+
+function methodClass(m){
+  if(m==='get') return 'm-get';
+  if(m==='post') return 'm-post';
+  if(m==='ws') return 'm-ws';
+  return 'm-note';
+}
+function methodLabel(m){
+  if(m==='get') return 'GET';
+  if(m==='post') return 'POST';
+  if(m==='ws') return 'WS';
+  return '•';
+}
+
+DATA.forEach(lane=>{
+  const laneEl = document.createElement('div');
+  laneEl.className='lane';
+  laneEl.style.setProperty('--line-hover', lane.colorHex);
+
+  const head = document.createElement('div');
+  head.className='lane-head';
+  head.innerHTML = `
+    <div class="tag" style="color:${lane.colorHex}"><span class="dot" style="background:${lane.colorHex}"></span>${lane.tag}</div>
+    <h3>${lane.name}</h3>
+    <div class="desc">${lane.desc}</div>
+  `;
+  laneEl.appendChild(head);
+
+  const body = document.createElement('div');
+  body.className='lane-body';
+
+  lane.groups.forEach(group=>{
+    const gl = document.createElement('div');
+    gl.className='group-label';
+    gl.textContent = group.label;
+    body.appendChild(gl);
+
+    group.items.forEach(item=>{
+      const card = document.createElement('div');
+      card.className='card';
+      const searchBlob = (item.file+' '+item.desc+' '+(item.routes||[]).map(r=>r.t).join(' ')).toLowerCase();
+      card.dataset.search = searchBlob;
+
+      const routesHtml = (item.routes && item.routes.length)
+        ? `<ul class="route-list">${item.routes.map(r=>`<li><span class="method ${methodClass(r.m)}">${methodLabel(r.m)}</span><span>${r.t}</span></li>`).join('')}</ul>`
+        : '';
+
+      card.innerHTML = `
+        <div class="card-head">
+          <div>
+            <div class="card-file" style="color:${lane.colorHex}">${item.file}</div>
+            <div class="card-desc">${item.desc}</div>
+          </div>
+          <span class="chev"></span>
+        </div>
+        <div class="card-body"><div class="card-body-inner">${routesHtml}</div></div>
+      `;
+      const headEl = card.querySelector('.card-head');
+      const bodyEl = card.querySelector('.card-body');
+      headEl.addEventListener('click', ()=>{
+        const isOpen = card.classList.toggle('open');
+        bodyEl.style.maxHeight = isOpen ? bodyEl.scrollHeight+'px' : '0px';
+      });
+      body.appendChild(card);
+    });
+  });
+
+  laneEl.appendChild(body);
+  lanesEl.appendChild(laneEl);
+});
+
+// ---------- Search ----------
+const searchInput = document.getElementById('search');
+const noResults = document.getElementById('noResults');
+searchInput.addEventListener('input', ()=>{
+  const q = searchInput.value.trim().toLowerCase();
+  let visibleCount = 0;
+  document.querySelectorAll('.card').forEach(card=>{
+    const match = !q || card.dataset.search.includes(q);
+    card.classList.toggle('hidden', !match);
+    if(match){
+      visibleCount++;
+      if(q){
+        card.classList.add('open');
+        const bodyEl = card.querySelector('.card-body');
+        bodyEl.style.maxHeight = bodyEl.scrollHeight+'px';
+      }
+    }
+  });
+  noResults.style.display = (visibleCount===0) ? 'block' : 'none';
+});
+
+// ---------- Expand/collapse all ----------
+document.getElementById('expandAll').addEventListener('click', ()=>{
+  document.querySelectorAll('.card').forEach(card=>{
+    card.classList.add('open');
+    const bodyEl = card.querySelector('.card-body');
+    bodyEl.style.maxHeight = bodyEl.scrollHeight+'px';
+  });
+});
+document.getElementById('collapseAll').addEventListener('click', ()=>{
+  document.querySelectorAll('.card').forEach(card=>{
+    card.classList.remove('open');
+    card.querySelector('.card-body').style.maxHeight = '0px';
+  });
+});
+</script>
+</body>
+</html>

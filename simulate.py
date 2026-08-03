@@ -467,6 +467,9 @@ class SharedState:
         self.invite_members = {}
         self.invite_start_time = {}
         self.invite_status = {}
+        # 🆕 invite_id -> product_id, để group_chat gửi group_id đúng theo
+        # product_id (quy ước server yêu cầu) thay vì invite_id.
+        self.invite_product_id = {}
         self.finding_on = set()
 
         # 🆕 ATTENDANCE: invite_id -> {user_id: attendance_status}, để nhớ
@@ -573,6 +576,7 @@ def action_create_invite(api, cfg, host: TestUser, state: SharedState):
             state.invite_hosts[invite_id] = host.user_id
             state.invite_members.setdefault(invite_id, set()).add(host.user_id)
             state.invite_start_time[invite_id] = start_dt
+            state.invite_product_id[invite_id] = product_id
         logging.info(f"[INVITE] {host.username} tạo kèo mới -> invite_id={invite_id} (product={product_id})")
         return invite_id
     logging.info(f"[INVITE] {host.username} tạo kèo thất bại: {data}")
@@ -599,6 +603,24 @@ def _is_invite_live_locked(invite_id, state: SharedState):
     return False
 
 
+def _is_invite_closed_locked(invite_id, state: SharedState):
+    """
+    Gọi khi ĐANG giữ state.lock. Coi là 'đã đóng' nếu status server trả rõ
+    ràng là closed/finished/completed/cancelled, HOẶC nếu biết start_time
+    mà đã quá 24 tiếng kể từ giờ bắt đầu (kèo tự đóng sau 24h theo rule
+    thật của site).
+    """
+    status = state.invite_status.get(invite_id)
+    if status in ("closed", "finished", "completed", "cancelled", "canceled"):
+        return True
+
+    start_dt = state.invite_start_time.get(invite_id)
+    if start_dt and datetime.now() > start_dt + timedelta(hours=24):
+        return True
+
+    return False
+
+
 def _pick_invite_weighted_locked(candidates, state: SharedState, live_weight=1.0, other_weight=0.8):
     """
     Gọi khi ĐANG giữ state.lock. Ưu tiên kèo đang live, kèo khác vẫn có thể
@@ -613,10 +635,17 @@ def _pick_invite_weighted_locked(candidates, state: SharedState, live_weight=1.0
 
 def action_join_invite(api, cfg, user: TestUser, state: SharedState):
     with state.lock:
+        # Dọn khỏi open_invites luôn những kèo đã phát hiện là đóng, để
+        # state không phình to mãi với rác kèo cũ.
+        closed_now = [i for i in list(state.open_invites) if _is_invite_closed_locked(i, state)]
+        for i in closed_now:
+            state.open_invites.discard(i)
+
         candidates = [
             i for i in state.open_invites
             if state.invite_hosts.get(i) != user.user_id
             and user.user_id not in state.invite_members.get(i, set())
+            and not _is_invite_closed_locked(i, state)
         ]
         if not candidates:
             invite_id = None
@@ -679,7 +708,10 @@ def action_send_group_chat(api, cfg, users, state: SharedState):
         after_join -> before_start -> during_meet -> after_meet
     """
     with state.lock:
-        all_invite_ids = list(set(state.open_invites) | set(state.invite_members.keys()))
+        all_invite_ids = [
+            i for i in set(state.open_invites) | set(state.invite_members.keys())
+            if not _is_invite_closed_locked(i, state)
+        ]
         if not all_invite_ids:
             return
 
@@ -703,8 +735,23 @@ def action_send_group_chat(api, cfg, users, state: SharedState):
     sender = turn["sender"]
     message = turn["message"]
 
+    with state.lock:
+        product_id = state.invite_product_id.get(invite_id)
+
+    if product_id is None:
+        # Chưa biết product_id của invite này (vd invite tạo trước khi state
+        # có mapping) -> fallback dùng invite_id để không rớt cả round chat,
+        # nhưng log cảnh báo để dễ phát hiện nếu việc này xảy ra thường xuyên.
+        logging.warning(
+            f"[GROUP-CHAT] invite_id={invite_id} chưa rõ product_id -> "
+            "tạm fallback group_id=invite_id."
+        )
+        group_id = invite_id
+    else:
+        group_id = product_id
+
     r = api.post("/wp-json/spiritwebs/v1/send-group-message", token=sender.token, json_body={
-        "group_id": invite_id,
+        "group_id": group_id,
         "sender_id": sender.user_id,
         "sender_name": sender.display_name,
         "message": message,
@@ -716,13 +763,13 @@ def action_send_group_chat(api, cfg, users, state: SharedState):
     if data and data.get("success"):
         advance_contextual_group_turn(invite_id, state)
         logging.info(
-            f"[GROUP-CHAT] invite_id={invite_id} [{turn['stage']}] "
+            f"[GROUP-CHAT] invite_id={invite_id} group_id={group_id} [{turn['stage']}] "
             f"turn={turn['turn_index'] + 1}/{turn['total_turns']} | "
             f"{sender.display_name}: {message}"
         )
     else:
         logging.info(
-            f"[GROUP-CHAT] invite_id={invite_id} thất bại: {data}"
+            f"[GROUP-CHAT] invite_id={invite_id} group_id={group_id} thất bại: {data}"
         )
 
 
@@ -1304,6 +1351,59 @@ def fetch_existing_invites(api: ApiClient, cfg, product_ids, token=None):
     return found
 
 
+def refresh_invite_status_loop(api: ApiClient, cfg, state: "SharedState",
+                                token, stop_event: threading.Event,
+                                interval_seconds=180):
+    """
+    🆕 Gọi lại /invite/by-products định kỳ (mặc định mỗi 3 phút) để cập nhật
+    invite_status/start_time mới nhất theo product_id, và dọn khỏi
+    open_invites những kèo vừa chuyển sang closed/finished/cancelled.
+
+    Trước đây fetch_existing_invites() chỉ được gọi ĐÚNG 1 LẦN lúc khởi
+    động (trong main()) -> mọi kèo đóng SAU thời điểm đó không bao giờ
+    được script biết tới, dẫn tới group_chat/join vẫn cứ nhắm vào kèo đã
+    đóng mãi mãi. Vòng lặp này chạy nền song song các worker để vá lỗi đó.
+    """
+    product_ids = cfg.get("product_ids") or []
+    if not product_ids:
+        return
+
+    while not stop_event.wait(interval_seconds):
+        try:
+            found = fetch_existing_invites(api, cfg, product_ids, token=token)
+        except Exception as e:
+            logging.error(f"[STATUS-REFRESH] Lỗi khi refresh invite status: {e}")
+            continue
+
+        with state.lock:
+            closed_count = 0
+            for inv in found:
+                invite_id = inv.get("invite_id")
+                if invite_id is None:
+                    continue
+                raw_status = inv.get("status")
+                if raw_status:
+                    state.invite_status[invite_id] = str(raw_status).lower()
+                product_id = inv.get("product_id")
+                if product_id is not None:
+                    state.invite_product_id[invite_id] = product_id
+                if _is_invite_closed_locked(invite_id, state):
+                    if invite_id in state.open_invites:
+                        closed_count += 1
+                    state.open_invites.discard(invite_id)
+
+            # Đồng thời quét lại toàn bộ open_invites hiện có (kể cả invite
+            # không nằm trong lần fetch này, ví dụ đã quá 24 tiếng từ
+            # start_time) để dọn theo suy luận thời gian.
+            for invite_id in list(state.open_invites):
+                if _is_invite_closed_locked(invite_id, state):
+                    state.open_invites.discard(invite_id)
+                    closed_count += 1
+
+        if closed_count:
+            logging.info(f"[STATUS-REFRESH] Đã dọn {closed_count} kèo đóng/hết hạn khỏi open_invites.")
+
+
 def human_delay(cfg):
     """
     Sinh thời gian nghỉ giữa 2 hành động theo kiểu người thật: phần lớn là
@@ -1436,6 +1536,10 @@ def main():
             state.invite_hosts[invite_id] = host_id
             state.invite_members.setdefault(invite_id, set()).add(host_id)
 
+        product_id = inv.get("product_id")
+        if product_id is not None:
+            state.invite_product_id[invite_id] = product_id
+
         raw_status = inv.get("status")
         if raw_status:
             state.invite_status[invite_id] = str(raw_status).lower()
@@ -1504,6 +1608,16 @@ def main():
     # 🆕 MAP PRESENCE: bật song song với các worker REST bên dưới, dùng
     # chung stop_event để Ctrl+C / systemd stop tắt cả 2 cùng lúc.
     map_bots = start_map_presence_bots(cfg, users, stop_event)
+
+    # 🆕 STATUS REFRESH: thread nền refresh invite_status định kỳ, để
+    # group_chat/join_invite không còn nhắm vào kèo đã đóng suốt phần đời
+    # còn lại của script (xem docstring refresh_invite_status_loop()).
+    status_refresh_thread = threading.Thread(
+        target=refresh_invite_status_loop,
+        args=(api, cfg, state, users[0].token if users else None, stop_event),
+        daemon=True,
+    )
+    status_refresh_thread.start()
 
     threads = []
     for i in range(concurrent_workers):

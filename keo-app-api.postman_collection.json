@@ -1,0 +1,3003 @@
+{
+  "info": {
+    "_postman_id": "eb0b5eb6-0911-43f5-97ab-26c0ca324d52",
+    "name": "Kèo App — Full API (WordPress + Phoenix)",
+    "description": "Toàn bộ REST API trích xuất trực tiếp từ mã nguồn allproject.zip:\n- WordPress plugin custom-api-core (namespace nhau/v1, custom/v1, spiritwebs/v1) + WooCommerce wc/v3\n- Phoenix server REST /api + ghi chú các WebSocket Channel realtime\n\nThiết lập biến môi trường (tab Variables của collection hoặc 1 Environment riêng) trước khi gọi:\n- wp_base, phx_base, phx_ws\n- jwt_token (Bearer token sau khi đăng nhập WordPress)\n- wp_phx_api_key (x-api-key dùng giữa WordPress ⇄ Phoenix)\n- wc_consumer_key, wc_consumer_secret (WooCommerce)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🟦 WordPress (spiritwebs.okinawanew.com)",
+      "item": [
+        {
+          "name": "Xác thực & Token",
+          "item": [
+            {
+              "name": "POST /nhau/v1/forgot-password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/forgot-password",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "forgot-password"
+                  ]
+                },
+                "description": "Gửi OTP quên mật khẩu qua email.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username_or_email\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/reset-password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/reset-password",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "reset-password"
+                  ]
+                },
+                "description": "Đặt lại mật khẩu bằng OTP đã nhận.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username_or_email\": \"\",\n  \"otp\": \"\",\n  \"new_password\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/delete-account",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/delete-account",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "delete-account"
+                  ]
+                },
+                "description": "Xoá tài khoản vĩnh viễn. Cần Authorization Bearer JWT.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/issue-refresh-token",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/issue-refresh-token",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "issue-refresh-token"
+                  ]
+                },
+                "description": "Gọi ngay sau khi đăng nhập mật khẩu thành công (kèm Bearer JWT) để xin refresh_token dùng cho đăng nhập vân tay.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/refresh-token",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/refresh-token",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "refresh-token"
+                  ]
+                },
+                "description": "Đổi refresh_token lấy JWT access token mới.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refresh_token\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ],
+          "description": "Đăng ký/đăng nhập dùng plugin JWT Auth chuẩn (không liệt kê ở đây) — nhóm này chỉ gồm quên mật khẩu, xoá tài khoản, và refresh token JWT tự viết (lite)."
+        },
+        {
+          "name": "Finding Kèo (tìm quanh đây)",
+          "item": [
+            {
+              "name": "POST /custom/v1/finding-keo/on",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/custom/v1/finding-keo/on",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "custom",
+                    "v1",
+                    "finding-keo",
+                    "on"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_id\": \"\",\n  \"lat\": \"\",\n  \"lng\": \"\",\n  \"district\": \"\",\n  \"activity_type\": \"\",\n  \"finding_option\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /custom/v1/finding-keo/off",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/custom/v1/finding-keo/off",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "custom",
+                    "v1",
+                    "finding-keo",
+                    "off"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /custom/v1/finding-keo/update-location",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/custom/v1/finding-keo/update-location",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "custom",
+                    "v1",
+                    "finding-keo",
+                    "update-location"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_id\": \"\",\n  \"lat\": \"\",\n  \"lng\": \"\",\n  \"district\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GET /custom/v1/finding-keo/status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/custom/v1/finding-keo/status?user_id=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "custom",
+                    "v1",
+                    "finding-keo",
+                    "status"
+                  ],
+                  "query": [
+                    {
+                      "key": "user_id",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": []
+            },
+            {
+              "name": "GET /custom/v1/finding-keo/nearby",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/custom/v1/finding-keo/nearby?current_user_id=&district=&activity_type=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "custom",
+                    "v1",
+                    "finding-keo",
+                    "nearby"
+                  ],
+                  "query": [
+                    {
+                      "key": "current_user_id",
+                      "value": "",
+                      "description": ""
+                    },
+                    {
+                      "key": "district",
+                      "value": "",
+                      "description": ""
+                    },
+                    {
+                      "key": "activity_type",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": []
+            }
+          ],
+          "description": ""
+        },
+        {
+          "name": "Invite / Kèo — vòng đời",
+          "item": [
+            {
+              "name": "GET /nhau/v1/invite/by-product",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/by-product?product_id=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "by-product"
+                  ],
+                  "query": [
+                    {
+                      "key": "product_id",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/invite/create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/create",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "create"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"product_id\": \"\",\n  \"creator_id\": \"\",\n  \"start_time\": \"\",\n  \"max_people\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GET /nhau/v1/invite/detail",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/detail?invite_id=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "detail"
+                  ],
+                  "query": [
+                    {
+                      "key": "invite_id",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/invite/join",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/join",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "join"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/invite/leave",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/leave",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "leave"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/invite/kick",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/kick",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "kick"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\",\n  \"user_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/invite/close",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/close",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "close"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/invite/open",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/open",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "open"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/rating/trust",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/rating/trust",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "rating",
+                    "trust"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\",\n  \"user_id\": \"\",\n  \"point\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GET /nhau/v1/invite/by-products",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/by-products?ids=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "by-products"
+                  ],
+                  "query": [
+                    {
+                      "key": "ids",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": "Lấy nhiều invite theo danh sách product ids (bulk)."
+              },
+              "response": []
+            },
+            {
+              "name": "GET /nhau/v1/products-status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/products-status?ids=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "products-status"
+                  ],
+                  "query": [
+                    {
+                      "key": "ids",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": []
+            }
+          ],
+          "description": ""
+        },
+        {
+          "name": "Invite / Kèo — vị trí & điểm hẹn",
+          "item": [
+            {
+              "name": "GET /nhau/v1/invite/meeting-point",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/meeting-point?invite_id=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "meeting-point"
+                  ],
+                  "query": [
+                    {
+                      "key": "invite_id",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/invite/location/update",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/location/update",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "location",
+                    "update"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\",\n  \"lat\": \"\",\n  \"lng\": \"\",\n  \"status\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GET /nhau/v1/invite/location/list",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/location/list?invite_id=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "location",
+                    "list"
+                  ],
+                  "query": [
+                    {
+                      "key": "invite_id",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/invite/update-attendance",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/update-attendance",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "update-attendance"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\",\n  \"lat\": \"\",\n  \"lng\": \"\",\n  \"status\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ],
+          "description": ""
+        },
+        {
+          "name": "Invite / Kèo — viewer, media, upload",
+          "item": [
+            {
+              "name": "POST /nhau/v1/invite/viewer-join",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/viewer-join",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "viewer-join"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/invite/viewer-leave",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/viewer-leave",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "viewer-leave"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/invite/media/add",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/media/add",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "media",
+                    "add"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\",\n  \"type\": \"\",\n  \"url\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GET /nhau/v1/invite/media",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/media?invite_id=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "media"
+                  ],
+                  "query": [
+                    {
+                      "key": "invite_id",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/upload",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/upload",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "upload"
+                  ]
+                },
+                "description": "Multipart form-data upload file (đổi body sang form-data, key 'file')."
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/invite/media/delete",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/invite/media/delete",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "invite",
+                    "media",
+                    "delete"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"media_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GET /nhau/v1/random-images",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/random-images",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "random-images"
+                  ]
+                },
+                "description": "Lấy ảnh ngẫu nhiên gợi ý khi tạo kèo."
+              },
+              "response": []
+            }
+          ],
+          "description": ""
+        },
+        {
+          "name": "Kèo của tôi / Shop / User stats",
+          "item": [
+            {
+              "name": "GET /nhau/v1/my-keo",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/my-keo?user_id=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "my-keo"
+                  ],
+                  "query": [
+                    {
+                      "key": "user_id",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": "user_id chỉ dùng khi admin xem hộ user khác; mặc định lấy từ JWT hiện tại.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GET /nhau/v1/shop-feed",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/shop-feed?lat=&lng=&radius_km=&nhau_category=&page=&per_page=&exclude_ids=&debug_counts=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "shop-feed"
+                  ],
+                  "query": [
+                    {
+                      "key": "lat",
+                      "value": "",
+                      "description": ""
+                    },
+                    {
+                      "key": "lng",
+                      "value": "",
+                      "description": ""
+                    },
+                    {
+                      "key": "radius_km",
+                      "value": "",
+                      "description": ""
+                    },
+                    {
+                      "key": "nhau_category",
+                      "value": "",
+                      "description": ""
+                    },
+                    {
+                      "key": "page",
+                      "value": "",
+                      "description": ""
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "",
+                      "description": ""
+                    },
+                    {
+                      "key": "exclude_ids",
+                      "value": "",
+                      "description": ""
+                    },
+                    {
+                      "key": "debug_counts",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": []
+            },
+            {
+              "name": "GET /nhau/v1/user-stats/{user_id}",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/user-stats/{user_id}",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "user-stats",
+                    "{user_id}"
+                  ]
+                },
+                "description": "Thay {user_id} bằng ID thật trong URL path."
+              },
+              "response": []
+            },
+            {
+              "name": "GET /nhau/v1/user-stats-bulk",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/user-stats-bulk?ids=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "user-stats-bulk"
+                  ],
+                  "query": [
+                    {
+                      "key": "ids",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": ""
+              },
+              "response": []
+            },
+            {
+              "name": "GET /nhau/v1/admin/users",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/admin/users?page=&per_page=&search=",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "admin",
+                    "users"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "",
+                      "description": ""
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "",
+                      "description": ""
+                    },
+                    {
+                      "key": "search",
+                      "value": "",
+                      "description": ""
+                    }
+                  ]
+                },
+                "description": "Danh sách user cho admin."
+              },
+              "response": []
+            }
+          ],
+          "description": ""
+        },
+        {
+          "name": "Report / Block",
+          "item": [
+            {
+              "name": "POST /nhau/v1/report",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/report",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "report"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"target_type\": \"\",\n  \"target_id\": \"\",\n  \"reason\": \"\",\n  \"note\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/block",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/block",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "block"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"blocked_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/unblock",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/unblock",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "unblock"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"blocked_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GET /nhau/v1/blocked-list",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/blocked-list",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "blocked-list"
+                  ]
+                },
+                "description": "",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "description": ""
+        },
+        {
+          "name": "Party Games (game bàn nhậu)",
+          "item": [
+            {
+              "name": "POST /spiritwebs/v1/spin",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/spiritwebs/v1/spin",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "spiritwebs",
+                    "v1",
+                    "spin"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/game/never-have-i-ever",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/game/never-have-i-ever",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "game",
+                    "never-have-i-ever"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/game/truth-or-dare",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/game/truth-or-dare",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "game",
+                    "truth-or-dare"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/game/dice-roll",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/game/dice-roll",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "game",
+                    "dice-roll"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invite_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ],
+          "description": ""
+        },
+        {
+          "name": "Invite tiện ích khác & Admin",
+          "item": [
+            {
+              "name": "POST /spiritwebs/v1/send-invite",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/spiritwebs/v1/send-invite",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "spiritwebs",
+                    "v1",
+                    "send-invite"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sender_id\": \"\",\n  \"receiver_id\": \"\",\n  \"invite_id\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GET /spiritwebs/v1/random-pub",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/spiritwebs/v1/random-pub",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "spiritwebs",
+                    "v1",
+                    "random-pub"
+                  ]
+                },
+                "description": "Gợi ý quán nhậu ngẫu nhiên."
+              },
+              "response": []
+            },
+            {
+              "name": "GET /nhau/v1/admin/message-stats",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/admin/message-stats",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "admin",
+                    "message-stats"
+                  ]
+                },
+                "description": "Thống kê số tin nhắn (không lộ nội dung), chỉ admin.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /nhau/v1/admin/socket-ticket",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{wp_base}}/nhau/v1/admin/socket-ticket",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "nhau",
+                    "v1",
+                    "admin",
+                    "socket-ticket"
+                  ]
+                },
+                "description": "Cấp ticket cho admin join channel admin:activity bên Phoenix.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{jwt_token}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "description": ""
+        },
+        {
+          "name": "WooCommerce (nguồn dữ liệu Kèo)",
+          "item": [
+            {
+              "name": "GET /wc/v3/products",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/wc/v3/products?consumer_key={{wc_consumer_key}}&consumer_secret={{wc_consumer_secret}}",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "wc",
+                    "v3",
+                    "products"
+                  ],
+                  "query": [
+                    {
+                      "key": "consumer_key",
+                      "value": "{{wc_consumer_key}}"
+                    },
+                    {
+                      "key": "consumer_secret",
+                      "value": "{{wc_consumer_secret}}"
+                    }
+                  ]
+                },
+                "description": "Danh sách kèo (mỗi kèo = 1 sản phẩm WooCommerce). Auth bằng consumer key/secret trong app Flutter (main.dart)."
+              },
+              "response": []
+            },
+            {
+              "name": "GET /wc/v3/products/{id}",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{wp_base}}/wc/v3/products/{id}?consumer_key={{wc_consumer_key}}&consumer_secret={{wc_consumer_secret}}",
+                  "host": [
+                    "{{wp_base}}"
+                  ],
+                  "path": [
+                    "wc",
+                    "v3",
+                    "products",
+                    "{id}"
+                  ]
+                },
+                "description": "Chi tiết 1 kèo."
+              },
+              "response": []
+            }
+          ],
+          "description": ""
+        }
+      ],
+      "description": "wp-json REST — plugin Custom API Core + WooCommerce."
+    },
+    {
+      "name": "🟧 Phoenix (socket.okinawanew.com)",
+      "item": [
+        {
+          "name": "Auth / Token / AI",
+          "item": [
+            {
+              "name": "GET /api/get-jwt-token",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_base}}/api/get-jwt-token",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "get-jwt-token"
+                  ]
+                },
+                "description": "Cấp JWT cho client kết nối socket."
+              },
+              "response": []
+            },
+            {
+              "name": "GET /api/logins",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_base}}/api/logins",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "logins"
+                  ]
+                },
+                "description": "Danh sách phiên đăng nhập hiện có."
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/invite-ai",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/invite-ai",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "invite-ai"
+                  ]
+                },
+                "description": "AI (SpiritAi.InviteAi) tự sinh nội dung lời mời, trả JSON.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"prompt\": \"\",\n  \"context\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/broadcast",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/broadcast",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "broadcast"
+                  ]
+                },
+                "description": "Broadcast thủ công tới 1 channel bất kỳ.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"topic\": \"\",\n  \"event\": \"\",\n  \"payload\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ],
+          "description": ""
+        },
+        {
+          "name": "Webhook từ WordPress (cần x-api-key)",
+          "item": [
+            {
+              "name": "POST /api/new_product",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/new_product",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "new_product"
+                  ]
+                },
+                "description": "WordPress báo có sản phẩm/kèo mới -> broadcast products:lobby.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"product\": \"\",\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/join_invite",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/join_invite",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "join_invite"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/new_chat_message",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/new_chat_message",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "new_chat_message"
+                  ]
+                },
+                "description": "chat = {sender_id, receiver_id, message, created_at}. Trigger FCM push.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"chat\": \"\",\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/send_invite",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/send_invite",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "send_invite"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/new_group_chat_message",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/new_group_chat_message",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "new_group_chat_message"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/realtime_products",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/realtime_products",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "realtime_products"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/invite/user-joined",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/invite/user-joined",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "invite",
+                    "user-joined"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/invite/user-left",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/invite/user-left",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "invite",
+                    "user-left"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/invite/user-kicked",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/invite/user-kicked",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "invite",
+                    "user-kicked"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/invite/closed",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/invite/closed",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "invite",
+                    "closed"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/invite/opened",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/invite/opened",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "invite",
+                    "opened"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/invite/attendance-updated",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/invite/attendance-updated",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "invite",
+                    "attendance-updated"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/invite/viewer-join",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/invite/viewer-join",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "invite",
+                    "viewer-join"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/invite/viewer-leave",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/invite/viewer-leave",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "invite",
+                    "viewer-leave"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/finding-keo/on",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/finding-keo/on",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "finding-keo",
+                    "on"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/finding-keo/off",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/finding-keo/off",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "finding-keo",
+                    "off"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/register_admin_ticket",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/register_admin_ticket",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "register_admin_ticket"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/admin_chat_activity",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-api-key",
+                    "value": "{{wp_phx_api_key}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{phx_base}}/api/admin_chat_activity",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin_chat_activity"
+                  ]
+                },
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"api_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ],
+          "description": "Toàn bộ route này được WordPress gọi (server-to-server) sau khi có sự kiện, kèm header x-api-key hoặc field api_key phải khớp Application.get_env(:phoenix_socket,:wordpress)[:api_key]."
+        },
+        {
+          "name": "Browser / LiveView (không phải JSON API)",
+          "item": [
+            {
+              "name": "GET / (trang chủ)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_base}}/",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    ""
+                  ]
+                },
+                "description": "PageController#index."
+              },
+              "response": []
+            },
+            {
+              "name": "GET /chat (LiveView)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_base}}/chat",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "chat"
+                  ]
+                },
+                "description": "Không phải REST JSON — chỉ mở được đúng trên trình duyệt (Phoenix LiveView qua WebSocket riêng)."
+              },
+              "response": []
+            },
+            {
+              "name": "GET /quiz (LiveView)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_base}}/quiz",
+                  "host": [
+                    "{{phx_base}}"
+                  ],
+                  "path": [
+                    "quiz"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "description": ""
+        },
+        {
+          "name": "⚡ WebSocket Channels (chỉ để tham khảo — Postman REST không gọi được)",
+          "item": [
+            {
+              "name": "WS · room:chat_*",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_ws}}/socket/websocket",
+                  "host": [
+                    "{{phx_ws}}"
+                  ],
+                  "path": [
+                    "socket",
+                    "websocket"
+                  ]
+                },
+                "description": "Topic Phoenix Channel: `room:chat_*` — chat 1-1 theo cặp user. Dùng Postman **WebSocket Request** (không phải HTTP request) để test: New → WebSocket Request → nhập {{phx_ws}}/socket/websocket rồi gửi frame:\n```json\n{\"topic\":\"room:chat_*\",\"event\":\"phx_join\",\"payload\":{},\"ref\":\"1\"}\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "WS · site:visit",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_ws}}/socket/websocket",
+                  "host": [
+                    "{{phx_ws}}"
+                  ],
+                  "path": [
+                    "socket",
+                    "websocket"
+                  ]
+                },
+                "description": "Topic Phoenix Channel: `site:visit` — lượt truy cập site realtime. Dùng Postman **WebSocket Request** (không phải HTTP request) để test: New → WebSocket Request → nhập {{phx_ws}}/socket/websocket rồi gửi frame:\n```json\n{\"topic\":\"site:visit\",\"event\":\"phx_join\",\"payload\":{},\"ref\":\"1\"}\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "WS · rows:lobby",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_ws}}/socket/websocket",
+                  "host": [
+                    "{{phx_ws}}"
+                  ],
+                  "path": [
+                    "socket",
+                    "websocket"
+                  ]
+                },
+                "description": "Topic Phoenix Channel: `rows:lobby` — dữ liệu bảng realtime. Dùng Postman **WebSocket Request** (không phải HTTP request) để test: New → WebSocket Request → nhập {{phx_ws}}/socket/websocket rồi gửi frame:\n```json\n{\"topic\":\"rows:lobby\",\"event\":\"phx_join\",\"payload\":{},\"ref\":\"1\"}\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "WS · online:lobby",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_ws}}/socket/websocket",
+                  "host": [
+                    "{{phx_ws}}"
+                  ],
+                  "path": [
+                    "socket",
+                    "websocket"
+                  ]
+                },
+                "description": "Topic Phoenix Channel: `online:lobby` — trạng thái online chung. Dùng Postman **WebSocket Request** (không phải HTTP request) để test: New → WebSocket Request → nhập {{phx_ws}}/socket/websocket rồi gửi frame:\n```json\n{\"topic\":\"online:lobby\",\"event\":\"phx_join\",\"payload\":{},\"ref\":\"1\"}\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "WS · crypto:lobby",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_ws}}/socket/websocket",
+                  "host": [
+                    "{{phx_ws}}"
+                  ],
+                  "path": [
+                    "socket",
+                    "websocket"
+                  ]
+                },
+                "description": "Topic Phoenix Channel: `crypto:lobby` — kênh market/crypto. Dùng Postman **WebSocket Request** (không phải HTTP request) để test: New → WebSocket Request → nhập {{phx_ws}}/socket/websocket rồi gửi frame:\n```json\n{\"topic\":\"crypto:lobby\",\"event\":\"phx_join\",\"payload\":{},\"ref\":\"1\"}\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "WS · products:lobby",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_ws}}/socket/websocket",
+                  "host": [
+                    "{{phx_ws}}"
+                  ],
+                  "path": [
+                    "socket",
+                    "websocket"
+                  ]
+                },
+                "description": "Topic Phoenix Channel: `products:lobby` — sản phẩm/kèo mới. Dùng Postman **WebSocket Request** (không phải HTTP request) để test: New → WebSocket Request → nhập {{phx_ws}}/socket/websocket rồi gửi frame:\n```json\n{\"topic\":\"products:lobby\",\"event\":\"phx_join\",\"payload\":{},\"ref\":\"1\"}\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "WS · chat_room:*",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_ws}}/socket/websocket",
+                  "host": [
+                    "{{phx_ws}}"
+                  ],
+                  "path": [
+                    "socket",
+                    "websocket"
+                  ]
+                },
+                "description": "Topic Phoenix Channel: `chat_room:*` — phòng chat mở rộng. Dùng Postman **WebSocket Request** (không phải HTTP request) để test: New → WebSocket Request → nhập {{phx_ws}}/socket/websocket rồi gửi frame:\n```json\n{\"topic\":\"chat_room:*\",\"event\":\"phx_join\",\"payload\":{},\"ref\":\"1\"}\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "WS · group_chat:*",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_ws}}/socket/websocket",
+                  "host": [
+                    "{{phx_ws}}"
+                  ],
+                  "path": [
+                    "socket",
+                    "websocket"
+                  ]
+                },
+                "description": "Topic Phoenix Channel: `group_chat:*` — chat nhóm theo kèo. Dùng Postman **WebSocket Request** (không phải HTTP request) để test: New → WebSocket Request → nhập {{phx_ws}}/socket/websocket rồi gửi frame:\n```json\n{\"topic\":\"group_chat:*\",\"event\":\"phx_join\",\"payload\":{},\"ref\":\"1\"}\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "WS · invite:*",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_ws}}/socket/websocket",
+                  "host": [
+                    "{{phx_ws}}"
+                  ],
+                  "path": [
+                    "socket",
+                    "websocket"
+                  ]
+                },
+                "description": "Topic Phoenix Channel: `invite:*` — realtime 1 lời mời cụ thể. Dùng Postman **WebSocket Request** (không phải HTTP request) để test: New → WebSocket Request → nhập {{phx_ws}}/socket/websocket rồi gửi frame:\n```json\n{\"topic\":\"invite:*\",\"event\":\"phx_join\",\"payload\":{},\"ref\":\"1\"}\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "WS · online_users:lobby",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_ws}}/socket/websocket",
+                  "host": [
+                    "{{phx_ws}}"
+                  ],
+                  "path": [
+                    "socket",
+                    "websocket"
+                  ]
+                },
+                "description": "Topic Phoenix Channel: `online_users:lobby` — danh sách user online. Dùng Postman **WebSocket Request** (không phải HTTP request) để test: New → WebSocket Request → nhập {{phx_ws}}/socket/websocket rồi gửi frame:\n```json\n{\"topic\":\"online_users:lobby\",\"event\":\"phx_join\",\"payload\":{},\"ref\":\"1\"}\n```"
+              },
+              "response": []
+            },
+            {
+              "name": "WS · admin:activity",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{phx_ws}}/socket/websocket",
+                  "host": [
+                    "{{phx_ws}}"
+                  ],
+                  "path": [
+                    "socket",
+                    "websocket"
+                  ]
+                },
+                "description": "Topic Phoenix Channel: `admin:activity` — admin xem hoạt động chat realtime, cần ticket hợp lệ. Dùng Postman **WebSocket Request** (không phải HTTP request) để test: New → WebSocket Request → nhập {{phx_ws}}/socket/websocket rồi gửi frame:\n```json\n{\"topic\":\"admin:activity\",\"event\":\"phx_join\",\"payload\":{},\"ref\":\"1\"}\n```"
+              },
+              "response": []
+            }
+          ],
+          "description": "Phoenix Channels dùng giao thức WebSocket (Phoenix protocol), khác REST. Trong Postman phải tạo loại request 'WebSocket Request' riêng, không dùng chung item HTTP — các item dưới đây chỉ mang tính ghi chú topic/mục đích."
+        }
+      ],
+      "description": "REST /api + Channels realtime + LiveView."
+    }
+  ],
+  "variable": [
+    {
+      "key": "wp_base",
+      "value": "https://spiritwebs.okinawanew.com/wp-json",
+      "type": "string"
+    },
+    {
+      "key": "phx_base",
+      "value": "https://socket.okinawanew.com",
+      "type": "string"
+    },
+    {
+      "key": "phx_ws",
+      "value": "wss://socket.okinawanew.com",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "wp_phx_api_key",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "wc_consumer_key",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "wc_consumer_secret",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
