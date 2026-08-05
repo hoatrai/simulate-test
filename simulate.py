@@ -467,10 +467,31 @@ class SharedState:
         self.invite_members = {}
         self.invite_start_time = {}
         self.invite_status = {}
+        # 🆕 invite_id -> bool is_full, lấy từ /invite/by-product(s). Theo
+        # đúng logic app thật (product_detail_page.dart / shop_page.dart):
+        # isClosed = is_full OR status in {closed, full, done} — is_full có
+        # thể true dù status server trả vẫn là "open" (kèo đầy nhưng chưa ai
+        # bấm đóng), nên phải theo dõi riêng, không suy được từ status.
+        self.invite_is_full = {}
         # 🆕 invite_id -> product_id, để group_chat gửi group_id đúng theo
         # product_id (quy ước server yêu cầu) thay vì invite_id.
         self.invite_product_id = {}
         self.finding_on = set()
+
+        # 🆕 TẬP TRUNG JOIN THEO GIỜ LIVE (không dồn dập, không đầy phòng):
+        # invite_id -> max_people thật (lấy từ response create/by-products).
+        self.invite_max_people = {}
+        # invite_id -> "sức chứa mềm" bot tự giới hạn cho chính mình, LUÔN
+        # < max_people thật (xem _pick_target_fill) — để dù kèo sắp live có
+        # được ưu tiên join cao thế nào, phòng cũng không bao giờ bị lấp
+        # kín khít, giống hành vi người thật (luôn còn dư ít chỗ).
+        self.invite_target_fill = {}
+        # invite_id -> timestamp (time.time()) sớm nhất được phép có thêm
+        # người join tiếp theo — set sau mỗi lần join thành công với 1
+        # khoảng cooldown ngẫu nhiên, để việc "tập trung join" 1 kèo sắp
+        # live vẫn rải ra theo thời gian thay vì nhiều worker join dồn dập
+        # cùng lúc chỉ vì trọng số của kèo đó đang cao.
+        self.invite_next_join_allowed_at = {}
 
         # 🆕 ATTENDANCE: invite_id -> {user_id: attendance_status}, để nhớ
         # user nào đã ở trạng thái nào rồi (tránh gọi lại API set đúng
@@ -577,7 +598,11 @@ def action_create_invite(api, cfg, host: TestUser, state: SharedState):
             state.invite_members.setdefault(invite_id, set()).add(host.user_id)
             state.invite_start_time[invite_id] = start_dt
             state.invite_product_id[invite_id] = product_id
-        logging.info(f"[INVITE] {host.username} tạo kèo mới -> invite_id={invite_id} (product={product_id})")
+            state.invite_max_people[invite_id] = max_people
+            state.invite_target_fill[invite_id] = _pick_target_fill(cfg, max_people)
+        logging.info(f"[INVITE] {host.username} tạo kèo mới -> invite_id={invite_id} (product={product_id}, "
+                     f"start={start_time}, max_people={max_people}, target_fill="
+                     f"{state.invite_target_fill[invite_id]})")
         return invite_id
     logging.info(f"[INVITE] {host.username} tạo kèo thất bại: {data}")
     return None
@@ -605,13 +630,26 @@ def _is_invite_live_locked(invite_id, state: SharedState):
 
 def _is_invite_closed_locked(invite_id, state: SharedState):
     """
-    Gọi khi ĐANG giữ state.lock. Coi là 'đã đóng' nếu status server trả rõ
-    ràng là closed/finished/completed/cancelled, HOẶC nếu biết start_time
-    mà đã quá 24 tiếng kể từ giờ bắt đầu (kèo tự đóng sau 24h theo rule
-    thật của site).
+    Gọi khi ĐANG giữ state.lock. Coi là 'đã đóng' theo ĐÚNG công thức app
+    thật đang dùng (đối chiếu product_detail_page.dart /
+    shop_page.dart::fetchInviteStatusesBulk/filterClosedProducts):
+
+        isClosed = is_full OR status in {"closed", "full", "done"}
+
+    is_full có thể true dù status vẫn còn "open" (kèo đầy chỗ nhưng chưa
+    ai bấm đóng) nên phải check RIÊNG, không suy được từ status.
+    Giữ thêm vài status "closed-like" khác (finished/completed/cancelled)
+    phòng trường hợp site có thêm biến thể trong tương lai — app hiện tại
+    chưa dùng nhưng không hại gì nếu giữ.
+    Ngoài ra vẫn giữ suy luận theo start_time (>24h) làm lưới an toàn cuối
+    cùng cho trường hợp không có status/is_full đáng tin cậy.
     """
+    if state.invite_is_full.get(invite_id):
+        return True
+
     status = state.invite_status.get(invite_id)
-    if status in ("closed", "finished", "completed", "cancelled", "canceled"):
+    if status in ("closed", "full", "done",
+                  "finished", "completed", "cancelled", "canceled"):
         return True
 
     start_dt = state.invite_start_time.get(invite_id)
@@ -621,19 +659,79 @@ def _is_invite_closed_locked(invite_id, state: SharedState):
     return False
 
 
-def _pick_invite_weighted_locked(candidates, state: SharedState, live_weight=1.0, other_weight=0.8):
+def _pick_target_fill(cfg, max_people):
     """
-    Gọi khi ĐANG giữ state.lock. Ưu tiên kèo đang live, kèo khác vẫn có thể
-    được chọn nhưng với xác suất tương đối = other_weight/live_weight
-    (mặc định 80%).
+    Chọn "sức chứa mềm" ngẫu nhiên cho 1 invite — số member tối đa mà BOT
+    tự cho phép join tới, LUÔN nhỏ hơn max_people thật. Mục đích: kể cả
+    khi 1 kèo sắp live được ưu tiên trọng số cao (xem
+    _invite_urgency_weight_locked) khiến nhiều worker cùng nhắm join vào,
+    phòng vẫn không bao giờ bị lấp kín khít — giống thật, gần như lúc nào
+    cũng còn dư vài chỗ trống chứ hiếm khi đúng y max_people.
+    Tỉ lệ lấy từ config invite_fill_ratio_min/max (mặc định 0.5-0.9), luôn
+    chừa lại ít nhất 1 chỗ so với max_people.
+    """
+    if not max_people or max_people <= 1:
+        return max_people or 1
+    ratio_min = cfg.get("invite_fill_ratio_min", 0.5)
+    ratio_max = cfg.get("invite_fill_ratio_max", 0.9)
+    ratio = random.uniform(ratio_min, ratio_max)
+    target = int(round(max_people * ratio))
+    return max(1, min(target, max_people - 1))
+
+
+def _invite_urgency_weight_locked(invite_id, state: SharedState, cfg):
+    """
+    Gọi khi ĐANG giữ state.lock. Trọng số "độ nóng" của 1 invite, dùng
+    chung cho cả join_invite lẫn update_attendance, để hành vi "sắp tới
+    giờ live thì tập trung join/cập nhật trạng thái vào đúng kèo đó nhiều
+    hơn" diễn ra tự nhiên (KHÔNG phải ép buộc — vẫn là random.choices có
+    trọng số, kèo khác vẫn có thể được chọn, chỉ với xác suất thấp hơn):
+
+      - Đang live (đã tới giờ, trong 4h đầu)         -> trọng số cao nhất
+        (invite_weight_live, mặc định 3.0)
+      - Sắp diễn ra trong vòng invite_urgent_window_minutes phút tới
+        (mặc định 60') -> tăng DẦN tuyến tính từ mức nền lên gần mức live
+        khi càng gần giờ (còn 60' -> ~mức nền; còn 0' -> ~mức live).
+      - Còn lại (xa giờ / không rõ start_time)        -> mức nền
+        (invite_weight_other, mặc định 0.8)
+    """
+    base = cfg.get("invite_weight_other", 0.8)
+    peak = cfg.get("invite_weight_live", 3.0)
+
+    if _is_invite_live_locked(invite_id, state):
+        return peak
+
+    start_dt = state.invite_start_time.get(invite_id)
+    if start_dt:
+        urgent_window = cfg.get("invite_urgent_window_minutes", 60)
+        minutes_left = (start_dt - datetime.now()).total_seconds() / 60.0
+        if 0 <= minutes_left <= urgent_window:
+            closeness = 1 - (minutes_left / urgent_window)  # 0 (còn 60') -> 1 (gần tới giờ)
+            return base + closeness * (peak - base)
+
+    return base
+
+
+def _pick_invite_weighted_locked(candidates, state: SharedState, cfg=None,
+                                  live_weight=1.0, other_weight=0.8):
+    """
+    Gọi khi ĐANG giữ state.lock. Nếu có cfg -> dùng
+    _invite_urgency_weight_locked() (ưu tiên cả live LẪN sắp-live theo
+    thang tăng dần). Không có cfg (giữ tương thích ngược cho lời gọi cũ)
+    -> fallback về logic nhị phân live/not-live như trước.
     """
     if not candidates:
         return None
-    weights = [live_weight if _is_invite_live_locked(i, state) else other_weight for i in candidates]
+    if cfg is not None:
+        weights = [_invite_urgency_weight_locked(i, state, cfg) for i in candidates]
+    else:
+        weights = [live_weight if _is_invite_live_locked(i, state) else other_weight for i in candidates]
     return random.choices(candidates, weights=weights, k=1)[0]
 
 
 def action_join_invite(api, cfg, user: TestUser, state: SharedState):
+    now_ts = time.time()
+
     with state.lock:
         # Dọn khỏi open_invites luôn những kèo đã phát hiện là đóng, để
         # state không phình to mãi với rác kèo cũ.
@@ -641,20 +739,38 @@ def action_join_invite(api, cfg, user: TestUser, state: SharedState):
         for i in closed_now:
             state.open_invites.discard(i)
 
-        candidates = [
-            i for i in state.open_invites
-            if state.invite_hosts.get(i) != user.user_id
-            and user.user_id not in state.invite_members.get(i, set())
-            and not _is_invite_closed_locked(i, state)
-        ]
+        candidates = []
+        for i in state.open_invites:
+            if state.invite_hosts.get(i) == user.user_id:
+                continue
+            if user.user_id in state.invite_members.get(i, set()):
+                continue
+            if _is_invite_closed_locked(i, state):
+                continue
+            # 🆕 Soft-cap: không join nếu invite đã đạt "sức chứa mềm" tự
+            # chọn ngẫu nhiên (invite_target_fill, luôn < max_people thật)
+            # -> dù kèo đang được ưu tiên trọng số cao vì sắp live, phòng
+            # vẫn không bao giờ bị bot lấp đầy khít.
+            target_fill = state.invite_target_fill.get(i)
+            if target_fill is not None and len(state.invite_members.get(i, set())) >= target_fill:
+                continue
+            # 🆕 Cooldown: vừa có người join kèo này chưa lâu -> bỏ qua lượt
+            # này, để việc "tập trung join" 1 kèo sắp live vẫn rải ra theo
+            # thời gian (không dồn dập), thay vì nhiều worker cùng join
+            # gần như cùng lúc chỉ vì trọng số của kèo đó đang cao.
+            if now_ts < state.invite_next_join_allowed_at.get(i, 0):
+                continue
+            candidates.append(i)
+
         if not candidates:
             invite_id = None
         else:
-            invite_id = _pick_invite_weighted_locked(candidates, state)
+            invite_id = _pick_invite_weighted_locked(candidates, state, cfg=cfg)
             live_tag = "LIVE" if _is_invite_live_locked(invite_id, state) else "not-live"
 
     if invite_id is None:
-        logging.info(f"[JOIN] {user.username} chưa có kèo nào (mới/chưa join) để join, bỏ qua round này.")
+        logging.info(f"[JOIN] {user.username} chưa có kèo nào phù hợp để join round này "
+                      "(hết candidate / đang trong cooldown / đã đạt sức chứa mềm).")
         return
 
     r = api.post("/wp-json/nhau/v1/invite/join", token=user.token, json_body={
@@ -664,8 +780,13 @@ def action_join_invite(api, cfg, user: TestUser, state: SharedState):
         return
     data = safe_json(r)
     if data and data.get("success"):
+        cooldown_min = cfg.get("invite_join_cooldown_seconds_min", 20)
+        cooldown_max = cfg.get("invite_join_cooldown_seconds_max", 90)
         with state.lock:
             state.invite_members.setdefault(invite_id, set()).add(user.user_id)
+            state.invite_next_join_allowed_at[invite_id] = time.time() + random.uniform(
+                cooldown_min, cooldown_max
+            )
         logging.info(f"[JOIN] {user.username} join invite_id={invite_id} [{live_tag}]")
     else:
         logging.info(f"[JOIN] {user.username} join invite_id={invite_id} [{live_tag}] thất bại: {data}")
@@ -721,7 +842,7 @@ def action_send_group_chat(api, cfg, users, state: SharedState):
             if len(state.invite_members.get(invite_id, set())) >= 2
         ]
         candidates = viable or all_invite_ids
-        invite_id = _pick_invite_weighted_locked(candidates, state)
+        invite_id = _pick_invite_weighted_locked(candidates, state, cfg=cfg)
         live_tag = "LIVE" if _is_invite_live_locked(invite_id, state) else "not-live"
 
     turn = get_contextual_group_turn(cfg, users, invite_id, state)
@@ -843,7 +964,8 @@ class MapPresenceBot:
     SIT_MAX_SECONDS = 20 * 60
 
     def __init__(self, ws_url, user: "TestUser", cfg, stop_event: threading.Event,
-                 avatar="", shared_district=None, shared_destination=None):
+                 avatar="", shared_district=None, shared_destination=None,
+                 api=None, shared_state=None):
         self.ws_url = ws_url
         self.user = user
         self.cfg = cfg
@@ -854,6 +976,17 @@ class MapPresenceBot:
         # trên map, giống 1 nhóm người thật cùng đi tới 1 quán.
         self.shared_district = shared_district
         self.shared_destination = shared_destination
+        # 🆕 api (ApiClient) + shared_state (SharedState, dùng chung với các
+        # action REST create/join_invite) — để bot map biết user của mình
+        # đã join kèo nào và lấy toạ độ quán thật (/invite/meeting-point).
+        # Đặt tên "shared_state" (không phải "state") để KHÔNG đụng với
+        # self.state bên dưới vốn đang dùng làm nhãn pha di chuyển
+        # ("moving"/"sitting").
+        self.api = api
+        self.shared_state = shared_state
+        # invite_id đang là "lý do" cho điểm đến hiện tại (None nếu điểm
+        # đến chỉ là chọn ngẫu nhiên, không gắn với kèo thật nào).
+        self.current_invite_id = None
         self._ref_seq = itertools.count(1)
         self.thread = threading.Thread(target=self._run, daemon=True)
         # State vị trí/hướng đi hiện tại — set thật ở _init_position() mỗi khi
@@ -881,8 +1014,68 @@ class MapPresenceBot:
         return (center["lat"] + r * math.cos(math.radians(angle)),
                 center["lng"] + r * math.sin(math.radians(angle)))
 
+    def _find_hot_invite_for_user(self):
+        """
+        Tìm invite mà CHÍNH user của bot này đã join (qua action REST
+        join_invite/create_invite dùng chung shared_state), đang live hoặc
+        sắp diễn ra trong vòng map_presence_urgent_window_minutes phút tới
+        (mặc định 90'), và chưa đóng. Nếu join nhiều kèo cùng lúc thoả điều
+        kiện, ưu tiên kèo gần giờ nhất. Trả về invite_id hoặc None.
+        """
+        if self.api is None or self.shared_state is None:
+            return None
+
+        urgent_window = timedelta(
+            minutes=self.cfg.get("map_presence_urgent_window_minutes", 90)
+        )
+        now = datetime.now()
+        best, best_start = None, None
+
+        with self.shared_state.lock:
+            for invite_id, members in self.shared_state.invite_members.items():
+                if self.user.user_id not in members:
+                    continue
+                if _is_invite_closed_locked(invite_id, self.shared_state):
+                    continue
+
+                live = _is_invite_live_locked(invite_id, self.shared_state)
+                start_dt = self.shared_state.invite_start_time.get(invite_id)
+                if not live:
+                    if not start_dt or start_dt - now > urgent_window:
+                        continue
+
+                if best is None or (
+                    start_dt is not None and (best_start is None or start_dt < best_start)
+                ):
+                    best, best_start = invite_id, start_dt
+
+        return best
+
     def _pick_destination(self):
-        """Chọn 1 'điểm hẹn' mới (giả lập 1 quán cụ thể) trong quận hiện tại."""
+        """
+        Chọn 1 điểm đến mới. Ưu tiên TUYỆT ĐỐI: nếu user của bot này đang
+        có 1 kèo sắp/đang live (xem _find_hot_invite_for_user), đi thẳng
+        tới toạ độ quán THẬT của kèo đó (qua /invite/meeting-point) thay vì
+        1 điểm ngẫu nhiên trong quận -> marker trên map thật sự hội tụ về
+        đúng nơi tổ chức kèo họ đã join, không phải toạ độ giả.
+        Không tìm được kèo nào phù hợp (hoặc chưa có toạ độ quán) -> fallback
+        về hành vi cũ: 1 điểm ngẫu nhiên quanh tâm quận.
+        """
+        hot_invite = self._find_hot_invite_for_user()
+        if hot_invite is not None:
+            coords = _get_invite_venue_coords(
+                self.api, hot_invite, self.user.token, self.shared_state
+            )
+            if coords is not None:
+                self.current_invite_id = hot_invite
+                logging.info(
+                    f"[MAP] {self.user.username} có kèo sắp/đang diễn ra "
+                    f"(invite_id={hot_invite}) -> đi thẳng tới điểm hẹn thật "
+                    f"(lat={coords[0]:.5f}, lng={coords[1]:.5f})."
+                )
+                return coords
+
+        self.current_invite_id = None
         jitter = self.cfg["coord_jitter_deg"]
         return self._random_point_around(self.center, jitter)
 
@@ -922,6 +1115,31 @@ class MapPresenceBot:
         """
         jitter = self.cfg["coord_jitter_deg"]
         now = time.time()
+
+        # 🆕 Kiểm tra "kèo nóng" mỗi chu kỳ (không đợi hết sitting/tới đích
+        # hiện tại) — để nếu user của bot này VỪA join 1 kèo sắp live qua
+        # action REST ở worker khác, marker trên map phản ứng gần như ngay
+        # (trong vòng 1 update_interval), đổi hướng đi thẳng tới điểm hẹn
+        # thật thay vì phải đợi xong vòng lang thang ngẫu nhiên đang dở.
+        hot_invite = self._find_hot_invite_for_user()
+        if hot_invite is not None and hot_invite != self.current_invite_id:
+            coords = _get_invite_venue_coords(
+                self.api, hot_invite, self.user.token, self.shared_state
+            )
+            if coords is not None:
+                self.destination = coords
+                self.current_invite_id = hot_invite
+                self.state = "moving"
+                logging.info(
+                    f"[MAP] {self.user.username} vừa có kèo invite_id={hot_invite} "
+                    "sắp/đang live -> đổi hướng đi thẳng tới điểm hẹn."
+                )
+        elif hot_invite is None and self.current_invite_id is not None:
+            # Kèo đã đóng/tan (quá giờ, hết cửa sổ live) -> không còn lý do
+            # đứng lỳ ở đó nữa; để chu kỳ sitting hiện tại (nếu có) tự hết
+            # bình thường rồi quay lại lang thang ngẫu nhiên như cũ, không
+            # cần rời đi đột ngột giữa chừng.
+            self.current_invite_id = None
 
         if self.state == "sitting":
             if now >= self.sit_until:
@@ -1086,10 +1304,15 @@ def action_update_attendance(api, cfg, users, state: SharedState):
                     continue  # đã chốt trạng thái, không đổi nữa
                 candidates.append((invite_id, uid, stage, current))
 
-    if not candidates:
-        return
+        if not candidates:
+            return
 
-    invite_id, user_id, stage, current = random.choice(candidates)
+        # 🆕 Ưu tiên cập nhật trạng thái tham dự cho các kèo CÀNG GẦN giờ
+        # live/đang live càng nhiều (cùng công thức độ "nóng" dùng cho
+        # join_invite), giống hành vi thật: gần giờ hẹn mọi người mới hay
+        # bấm "đang tới"/"đã tới", còn kèo còn xa giờ thì ít ai đụng tới.
+        weights = [_invite_urgency_weight_locked(c[0], state, cfg) for c in candidates]
+        invite_id, user_id, stage, current = random.choices(candidates, weights=weights, k=1)[0]
     user = next((u for u in users if u.user_id == user_id), None)
     if user is None:
         return
@@ -1148,11 +1371,17 @@ def action_update_attendance(api, cfg, users, state: SharedState):
         )
 
 
-def start_map_presence_bots(cfg, users, stop_event: threading.Event):
+def start_map_presence_bots(cfg, users, stop_event: threading.Event, api=None, state=None):
     """
     Chọn ngẫu nhiên map_presence_worker_count user (trong số đã login) để
     giữ WebSocket sống, hiện marker trên map. Trả về list bot đã start (để
     main() join lại lúc dừng script).
+
+    🆕 api + state (ApiClient/SharedState dùng chung với các action REST)
+    được truyền xuống từng MapPresenceBot để bot biết user của mình đã
+    join kèo nào (qua state.invite_members) và lấy toạ độ quán thật
+    (qua api /invite/meeting-point) khi kèo đó sắp/đang live -> marker di
+    chuyển đúng hướng điểm hẹn thay vì luôn luôn đi ngẫu nhiên.
     """
     if not cfg.get("map_presence_enabled"):
         logging.info("[MAP] map_presence_enabled=false -> bỏ qua, không có bot nào hiện trên map.")
@@ -1205,12 +1434,16 @@ def start_map_presence_bots(cfg, users, stop_event: threading.Event):
                 avatar=random.choice(avatars),
                 shared_district=district,
                 shared_destination=destination,
+                api=api, shared_state=state,
             ))
         logging.info(f"[MAP] Nhóm {len(members)} user cùng hẹn nhau ở {district} "
                      f"(lat={destination[0]:.5f}, lng={destination[1]:.5f}).")
 
     for u in solo_pool:
-        bots.append(MapPresenceBot(ws_url, u, cfg, stop_event, avatar=random.choice(avatars)))
+        bots.append(MapPresenceBot(
+            ws_url, u, cfg, stop_event, avatar=random.choice(avatars),
+            api=api, shared_state=state,
+        ))
 
     random.shuffle(bots)  # tránh join theo đúng thứ tự nhóm, rải ngẫu nhiên hơn
     for bot in bots:
@@ -1333,20 +1566,27 @@ def fetch_existing_invites(api: ApiClient, cfg, product_ids, token=None):
         if not invite_id:
             continue
         status = str(invite.get("status") or entry.get("status") or "").lower()
-        # Chỉ bỏ qua khi biết chắc đã đóng; is_full vẫn giữ lại để có thể
-        # chat nhóm (không cần join được mới chat được).
-        if status == "closed":
-            continue
+        is_full = bool(invite.get("is_full") if invite.get("is_full") is not None
+                        else entry.get("is_full"))
+        # 🔧 KHÔNG tự lọc bỏ status=="closed" ở đây nữa. Trước đây làm vậy
+        # khiến refresh_invite_status_loop() không bao giờ nhận được tín
+        # hiệu "đã đóng" từ server (vì bị filter mất trước khi tới nơi cần
+        # dùng nó để cập nhật state.invite_status). Giờ trả về ĐẦY ĐỦ, để
+        # nơi gọi (main() lúc seed, refresh loop lúc cập nhật) tự quyết
+        # định có thêm vào open_invites hay không dựa theo
+        # _is_invite_closed_locked() (is_full OR status closed/full/done —
+        # đúng công thức app thật đang dùng).
         found.append({
             "invite_id": invite_id,
             "host_id": invite.get("host_id"),
             "status": status,
             "start_time": invite.get("start_time"),
-            "is_full": entry.get("is_full"),
+            "is_full": is_full,
+            "max_people": invite.get("max_people") or entry.get("max_people"),
             "product_id": invite.get("product_id") or product_id_str,
         })
 
-    logging.info(f"Fetch được {len(found)} kèo đang mở sẵn từ /invite/by-products (trong "
+    logging.info(f"Fetch được {len(found)} kèo (kể cả đã đóng/đầy) từ /invite/by-products (trong "
                  f"{len(product_ids)} product được hỏi).")
     return found
 
@@ -1384,6 +1624,27 @@ def refresh_invite_status_loop(api: ApiClient, cfg, state: "SharedState",
                 raw_status = inv.get("status")
                 if raw_status:
                     state.invite_status[invite_id] = str(raw_status).lower()
+                # 🔧 Trước đây không lưu is_full ở đây -> _is_invite_closed_locked
+                # không bao giờ bắt được trường hợp "đầy chỗ nhưng status vẫn
+                # 'open'" (đúng như app thật gặp, xem product_detail_page.dart).
+                state.invite_is_full[invite_id] = bool(inv.get("is_full"))
+
+                raw_max_people = inv.get("max_people")
+                if raw_max_people is not None:
+                    try:
+                        max_people = int(raw_max_people)
+                    except (TypeError, ValueError):
+                        max_people = None
+                    if max_people:
+                        state.invite_max_people[invite_id] = max_people
+                        # Chỉ chọn target_fill nếu CHƯA có (không đổi giữa
+                        # chừng "sức chứa mềm" đã chọn từ trước, tránh làm
+                        # invite bỗng nhiên "hết chỗ" hoặc "mở thêm chỗ" một
+                        # cách khó hiểu giữa 2 lần refresh).
+                        state.invite_target_fill.setdefault(
+                            invite_id, _pick_target_fill(cfg, max_people)
+                        )
+
                 product_id = inv.get("product_id")
                 if product_id is not None:
                     state.invite_product_id[invite_id] = product_id
@@ -1402,6 +1663,58 @@ def refresh_invite_status_loop(api: ApiClient, cfg, state: "SharedState",
 
         if closed_count:
             logging.info(f"[STATUS-REFRESH] Đã dọn {closed_count} kèo đóng/hết hạn khỏi open_invites.")
+
+
+def run_cron_create_keo_loop(cfg, stop_event: threading.Event):
+    """
+    🆕 CRON TẠO KÈO: gọi định kỳ 1 URL cron riêng của site (vd
+    "?run_keo=<token>") để trigger site tự tạo kèo mới — KHÁC với
+    action_create_invite() (là bot tự POST /invite/create bằng token của 1
+    user cụ thể). Cái này là site-wide, không gắn với user nào cả.
+
+    Thời gian giữa 2 lần gọi là NGẪU NHIÊN trong khoảng
+    [cron_create_keo_interval_min_seconds, cron_create_keo_interval_max_seconds]
+    (mặc định 300-1800s = 5-30 phút), để không tạo pattern đều đặn dễ đoán.
+
+    Bật/tắt qua config["cron_create_keo_enabled"]; URL đầy đủ lấy từ
+    config["cron_create_keo_url"] (đã gồm base_url + path + query token thật,
+    KHÔNG hardcode token ở đây).
+    """
+    if not cfg.get("cron_create_keo_enabled"):
+        return
+
+    url = cfg.get("cron_create_keo_url")
+    if not url:
+        logging.warning(
+            "[CRON-KEO] cron_create_keo_enabled=true nhưng chưa điền "
+            "cron_create_keo_url trong config -> bỏ qua tính năng này."
+        )
+        return
+
+    min_s = cfg.get("cron_create_keo_interval_min_seconds", 300)
+    max_s = cfg.get("cron_create_keo_interval_max_seconds", 1800)
+    session = requests.Session()
+
+    # Chờ 1 khoảng ngẫu nhiên trước lần gọi ĐẦU TIÊN luôn, thay vì bắn ngay
+    # lúc script vừa start -> tránh trùng thời điểm với các thread nền khác.
+    stop_event.wait(random.uniform(min_s, max_s))
+
+    while not stop_event.is_set():
+        try:
+            r = session.get(url, timeout=15)
+            if r is not None and r.status_code == 200:
+                logging.info(f"[CRON-KEO] Gọi cron tạo kèo OK (status={r.status_code}).")
+            else:
+                logging.warning(
+                    f"[CRON-KEO] Gọi cron tạo kèo trả về bất thường "
+                    f"(status={r.status_code if r is not None else 'no response'})."
+                )
+        except requests.RequestException as e:
+            logging.error(f"[CRON-KEO] Lỗi network khi gọi cron tạo kèo: {e}")
+
+        delay = random.uniform(min_s, max_s)
+        logging.info(f"[CRON-KEO] Lần gọi tiếp theo sau ~{delay/60:.1f} phút.")
+        stop_event.wait(delay)
 
 
 def human_delay(cfg):
@@ -1528,10 +1841,10 @@ def main():
     existing_invites = fetch_existing_invites(
         api, cfg, cfg["product_ids"], token=users[0].token if users else None
     )
+    skipped_closed = 0
     for inv in existing_invites:
         invite_id = inv.get("invite_id")
         host_id = inv.get("host_id")
-        state.open_invites.add(invite_id)
         if host_id:
             state.invite_hosts[invite_id] = host_id
             state.invite_members.setdefault(invite_id, set()).add(host_id)
@@ -1544,6 +1857,18 @@ def main():
         if raw_status:
             state.invite_status[invite_id] = str(raw_status).lower()
 
+        state.invite_is_full[invite_id] = bool(inv.get("is_full"))
+
+        raw_max_people = inv.get("max_people")
+        if raw_max_people is not None:
+            try:
+                max_people = int(raw_max_people)
+            except (TypeError, ValueError):
+                max_people = None
+            if max_people:
+                state.invite_max_people[invite_id] = max_people
+                state.invite_target_fill[invite_id] = _pick_target_fill(cfg, max_people)
+
         raw_start = inv.get("start_time")
         if raw_start:
             parsed = None
@@ -1555,9 +1880,22 @@ def main():
                     continue
             if parsed:
                 state.invite_start_time[invite_id] = parsed
+
+        # 🔧 Chỉ thêm vào open_invites nếu THẬT SỰ chưa đóng (is_full OR
+        # status closed/full/done). Trước đây add() vô điều kiện ngay từ
+        # đầu vòng lặp, trước cả khi status/is_full được ghi nhận, nên kèo
+        # đã đóng/đầy vẫn lọt vào open_invites ngay từ round đầu tiên.
+        # Chưa có worker nào chạy ở thời điểm này nên gọi thẳng hàm
+        # "_locked" mà không cần giữ state.lock cũng an toàn.
+        if _is_invite_closed_locked(invite_id, state):
+            skipped_closed += 1
+        else:
+            state.open_invites.add(invite_id)
+
     if existing_invites:
-        logging.info(f"Đã seed {len(existing_invites)} kèo có sẵn vào state (open_invites hiện có "
-                     f"{len(state.open_invites)} kèo tổng).")
+        logging.info(f"Đã seed {len(existing_invites)} kèo có sẵn vào state "
+                     f"({skipped_closed} đã đóng/đầy -> không add vào open_invites; "
+                     f"open_invites hiện có {len(state.open_invites)} kèo).")
 
     actions = cfg["actions_enabled"]
     weighted_actions = []
@@ -1607,7 +1945,7 @@ def main():
 
     # 🆕 MAP PRESENCE: bật song song với các worker REST bên dưới, dùng
     # chung stop_event để Ctrl+C / systemd stop tắt cả 2 cùng lúc.
-    map_bots = start_map_presence_bots(cfg, users, stop_event)
+    map_bots = start_map_presence_bots(cfg, users, stop_event, api=api, state=state)
 
     # 🆕 STATUS REFRESH: thread nền refresh invite_status định kỳ, để
     # group_chat/join_invite không còn nhắm vào kèo đã đóng suốt phần đời
@@ -1618,6 +1956,16 @@ def main():
         daemon=True,
     )
     status_refresh_thread.start()
+
+    # 🆕 CRON TẠO KÈO: thread nền riêng, gọi URL cron site-wide theo chu kỳ
+    # ngẫu nhiên (xem run_cron_create_keo_loop()). Tự no-op nếu config chưa
+    # bật/điền cron_create_keo_url.
+    cron_keo_thread = threading.Thread(
+        target=run_cron_create_keo_loop,
+        args=(cfg, stop_event),
+        daemon=True,
+    )
+    cron_keo_thread.start()
 
     threads = []
     for i in range(concurrent_workers):

@@ -1,7 +1,6 @@
 {
   "base_url": "https://spiritwebs.okinawanew.com",
   "_comment_accounts": "Điền username/password của các tài khoản test đã có sẵn trên site test. Script sẽ tự login lấy JWT cho từng người.",
-
   "accounts": [
     {
       "username": "duonganh",
@@ -342,10 +341,125 @@
     {
       "username": "kiwi",
       "password": "1"
+    },
+    {
+      "username": "anvy",
+      "password": "1"
+    },
+    {
+      "username": "Andyy",
+      "password": "1"
+    },
+    {
+      "username": "tutran",
+      "password": "1"
+    },
+    {
+      "username": "nhi.ly",
+      "password": "1"
+    },
+    {
+      "username": "uyen.mai",
+      "password": "1"
+    },
+    {
+      "username": "huynh.linh",
+      "password": "1"
+    },
+    {
+      "username": "dotrung",
+      "password": "1"
+    },
+    {
+      "username": "ngo.hoang",
+      "password": "1"
+    },
+    {
+      "username": "khanht",
+      "password": "1"
+    },
+    {
+      "username": "nhi.phan",
+      "password": "1"
+    },
+    {
+      "username": "hpham",
+      "password": "1"
+    },
+    {
+      "username": "quan",
+      "password": "1"
+    },
+    {
+      "username": "hhoang",
+      "password": "1"
+    },
+    {
+      "username": "lyngan",
+      "password": "1"
+    },
+    {
+      "username": "vuhanh",
+      "password": "1"
+    },
+    {
+      "username": "hoang.thanh",
+      "password": "1"
+    },
+    {
+      "username": "tai.d",
+      "password": "1"
+    },
+    {
+      "username": "k.duong",
+      "password": "1"
+    },
+    {
+      "username": "binhn",
+      "password": "1"
+    },
+    {
+      "username": "huynh.dung",
+      "password": "1"
+    },
+    {
+      "username": "nhungdang",
+      "password": "1"
+    },
+    {
+      "username": "dle",
+      "password": "1"
+    },
+    {
+      "username": "phamminh",
+      "password": "1"
+    },
+    {
+      "username": "y.huynh",
+      "password": "1"
+    },
+    {
+      "username": "d.huynh",
+      "password": "1"
+    },
+    {
+      "username": "vinh.n",
+      "password": "1"
+    },
+    {
+      "username": "hoang.vinh",
+      "password": "1"
     }
   ],
+
   "_comment_products": "Danh sách product_id (kèo) đã tồn tại sẵn trên site (WooCommerce product), dùng để tạo invite. Nếu để trống, script sẽ bỏ qua hành vi 'tạo kèo mới' và chỉ join các invite đang mở sẵn.",
   "product_ids": [],
+
+  "_comment_cron_create_keo": "🆕 Cron riêng của site để tự tạo kèo (khác action_create_invite ở trên, cái này gọi site-wide, không cần token user). Điền cron_create_keo_url = URL ĐẦY ĐỦ kèo token thật (vd 'https://spiritwebs.okinawanew.com/?run_keo=<token_that>'). Script sẽ tự gọi GET url này lặp lại, mỗi lần cách nhau 1 khoảng NGẪU NHIÊN trong [min, max] giây (mặc định 5-30 phút) để không đều đặn dễ đoán.",
+  "cron_create_keo_enabled": false,
+  "cron_create_keo_url": "",
+  "cron_create_keo_interval_min_seconds": 300,
+  "cron_create_keo_interval_max_seconds": 1800,
   "_comment_existing_invites": "Nếu anh đã biết sẵn 1 vài invite_id đang mở trên site test, điền vào đây để script chắc chắn có cái để join/chat ngay từ round đầu (không phải chờ ai đó tạo kèo trước).",
   "seed_invite_ids": [],
   "_comment_districts": "Đã mở rộng ra full 24 quận/huyện cũ của TP.HCM (trước sáp nhập hành chính 2021/2025, tên vẫn đang dùng trên site test). Mỗi quận có toạ độ tâm riêng trong 'district_centers' bên dưới -> action_finding_keo và map-presence bot sẽ chọn quận trước rồi random toạ độ quanh đúng tâm quận đó, thay vì tất cả dồn quanh 1 điểm như trước. Muốn thu hẹp lại thì chỉ cần bớt phần tử trong mảng này (không cần đụng district_centers).",
@@ -451,10 +565,23 @@
   },
   "_comment_num_rounds": "0 hoặc số âm = chạy VÔ HẠN (không tự dừng). Đặt số dương (vd 80) nếu chỉ muốn test 1 lượt rồi thôi.",
   "num_rounds": 0,
+
+  "_comment_invite_urgency": "🆕 Tuỳ chọn: điều khiển hành vi 'kèo sắp live thì tập trung join/cập nhật tham dự hơn, nhưng không dồn dập, không đầy phòng'. invite_urgent_window_minutes = trong vòng bao nhiêu phút trước giờ live thì bắt đầu được ưu tiên (tăng dần khi càng gần giờ). invite_weight_other/invite_weight_live = trọng số random.choices ở 2 đầu thang (kèo còn xa giờ / đang live hẳn) — không phải xác suất tuyệt đối, chỉ là trọng số tương đối giữa các kèo đang mở cùng lúc.",
+  "invite_urgent_window_minutes": 60,
+  "invite_weight_other": 0.8,
+  "invite_weight_live": 3.0,
+  "_comment_invite_fill": "🆕 'Sức chứa mềm' bot tự áp cho mỗi kèo — LUÔN nhỏ hơn max_people thật, để dù kèo được ưu tiên join cao thế nào cũng không bao giờ bị bot lấp đầy khít. Chọn ngẫu nhiên 1 tỉ lệ trong [min,max] * max_people mỗi khi tạo/seed 1 kèo mới.",
+  "invite_fill_ratio_min": 0.5,
+  "invite_fill_ratio_max": 0.9,
+  "_comment_invite_join_cooldown": "🆕 Sau mỗi lượt join thành công vào 1 kèo, kèo đó tạm 'nghỉ' không nhận thêm người join trong 1 khoảng ngẫu nhiên [min,max] giây — để việc 'tập trung join' kèo sắp live vẫn rải ra theo thời gian (không dồn dập nhiều người join gần như cùng lúc).",
+  "invite_join_cooldown_seconds_min": 20,
+  "invite_join_cooldown_seconds_max": 90,
+  "_comment_map_presence_urgent_window": "🆕 Bot map-presence (flutter_map) mà user của nó đã join 1 kèo sắp live trong vòng bao nhiêu phút (hoặc đang live) thì sẽ tự đổi hướng đi thẳng tới toạ độ quán thật của kèo đó (qua /invite/meeting-point) thay vì lang thang ngẫu nhiên trong quận.",
+  "map_presence_urgent_window_minutes": 90,
   "_comment_concurrent_workers": "Số 'worker' chạy song song (mỗi worker giả lập độc lập, giống nhiều người dùng thật cùng online 1 lúc). Tăng lên để thấy nhiều hành động chồng lấn/xôm hơn; giảm xuống nếu sợ dội quá nhiều request cùng lúc vào site test. Tự động không vượt quá số tài khoản login được.",
-  "concurrent_workers": 30,
-  "delay_seconds_min": 2,
-  "delay_seconds_max": 6,
+  "concurrent_workers": 15,
+  "delay_seconds_min": 5,
+  "delay_seconds_max": 12,
   "_comment_center": "Toạ độ trung tâm Quận 7 (Phú Mỹ Hưng khu vực), bán kính jitter thu hẹp lại cho tọa độ random rơi đúng trong phạm vi Q7 thay vì lan ra cả TP.",
   "hcmc_center": {
     "lat": 10.7411,
@@ -467,9 +594,9 @@
   "websocket_url": "wss://socket.okinawanew.com/socket/websocket?vsn=2.0.0",
   "map_presence_enabled": true,
   "_comment_map_presence_worker_count": "Số user (trong số accounts đã login) sẽ giữ socket sống + hiện trên map cùng lúc. Độc lập với concurrent_workers (đó là số worker cho action REST tạo kèo/chat/join).",
-  "map_presence_worker_count": 30,
+  "map_presence_worker_count": 10,
   "_comment_map_presence_update_interval": "Chu kỳ (giây) mỗi bot gửi lại toạ độ mới lên server, giả lập như đang di chuyển nhẹ quanh khu vực.",
-  "map_presence_update_interval_seconds": 25,
+  "map_presence_update_interval_seconds": 60,
 
   "_comment_map_presence_group_ratio": "🆕 Tỉ lệ (0.0-1.0) số user map-presence sẽ được ghép thành 'nhóm bạn' (2-4 người) cùng hẹn hội tụ về 1 điểm chung trong cùng 1 quận, thay vì mỗi người đi lang thang riêng lẻ. Phần còn lại vẫn đi solo như bình thường. 0 = tắt hẳn tính năng nhóm.",
   "map_presence_group_ratio": 0.5,
