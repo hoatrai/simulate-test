@@ -362,7 +362,14 @@ def get_invite_stage_locked(invite_id, state: "SharedState"):
             return "after_join"
         if now < start_dt:
             return "before_start"
-        if now <= start_dt + timedelta(hours=4):
+        # 🔧 FIX: app thật (product_detail_page.dart::_isLive) coi kèo là
+        # "đang diễn ra" trong 24h sau giờ bắt đầu, KHÔNG PHẢI 4h — vì
+        # backend không có field "giờ kết thúc" riêng cho invite, chỉ suy
+        # ra từ giờ bắt đầu (meta 'time') + ngưỡng cứng 24h
+        # (`diff.abs().inHours < 24`). Trước đây script dùng 4h nên sau 4h
+        # là tự coi kèo đã tan (rớt về after_meet), lệch hẳn so với app
+        # thật vẫn đang hiện badge "🔥 Đang diễn ra" tới tận giờ thứ 24.
+        if now <= start_dt + timedelta(hours=24):
             return "during_meet"
         return "after_meet"
 
@@ -623,7 +630,9 @@ def _is_invite_live_locked(invite_id, state: SharedState):
     start_dt = state.invite_start_time.get(invite_id)
     if start_dt:
         now = datetime.now()
-        return start_dt <= now <= start_dt + timedelta(hours=4)
+        # 🔧 FIX: đồng bộ đúng ngưỡng 24h của app thật (xem comment ở
+        # get_invite_stage_locked), không phải 4h như trước.
+        return start_dt <= now <= start_dt + timedelta(hours=24)
 
     return False
 
@@ -869,7 +878,34 @@ def action_send_group_chat(api, cfg, users, state: SharedState):
         )
         group_id = invite_id
     else:
-        group_id = product_id
+        # 🔧 NGHI VẤN cho lỗi "vô group chat không thấy tin nhắn / không có
+        # thông báo": group_id hiện đang gửi lên là product_id (theo giả
+        # định trong comment __init__ SharedState — "group_chat gửi group_id
+        # đúng theo app thật"). Nếu group chat thật của app (Flutter) load
+        # tin nhắn theo INVITE_ID (mỗi kèo/lượt hẹn 1 group riêng) chứ không
+        # theo product_id (nhiều invite có thể dùng chung 1 product/quán),
+        # thì tin nhắn bot gửi sẽ nằm ở group_id SAI so với group_id app
+        # đang query khi user thật mở group chat của kèo họ đã join -> đúng
+        # y hiện tượng "gửi lên được (success) nhưng vào xem không thấy gì".
+        # Đổi config["group_chat_id_source"] = "invite_id" để test nhanh mà
+        # không cần sửa code, rồi so sánh với hành vi thật của app xem group
+        # chat load theo id nào (xem hàm Flutter/PHP fetch group messages).
+        # ✅ ĐÃ CONFIRM qua product_detail_page.dart (_goToGroupChat():
+        # `GroupChatPage(groupId: inviteId!, ...)`) — group chat thật của
+        # app luôn mở theo INVITE_ID, KHÔNG PHẢI product_id. Đây chính là
+        # lý do bot gửi "success" nhưng user thật vào group chat của kèo
+        # mình join không thấy gì: bot gửi nhầm lên group_id=product_id,
+        # trong khi app query/hiện theo group_id=invite_id. Đổi default
+        # sang invite_id; vẫn để cfg override phòng trường hợp về sau đổi
+        # kiến trúc chat.
+        id_source = cfg.get("group_chat_id_source", "invite_id")
+        group_id = invite_id if id_source == "invite_id" else product_id
+        logging.info(
+            f"[GROUP-CHAT] invite_id={invite_id}: dùng group_id={group_id} "
+            f"(nguồn={id_source}; product_id thật={product_id}) — nếu tin "
+            "nhắn gửi 'success' nhưng app không hiện, thử đổi "
+            "group_chat_id_source sang giá trị còn lại trong config.json."
+        )
 
     r = api.post("/wp-json/spiritwebs/v1/send-group-message", token=sender.token, json_body={
         "group_id": group_id,
@@ -1041,7 +1077,24 @@ class MapPresenceBot:
                 live = _is_invite_live_locked(invite_id, self.shared_state)
                 start_dt = self.shared_state.invite_start_time.get(invite_id)
                 if not live:
-                    if not start_dt or start_dt - now > urgent_window:
+                    # 🔧 FIX: điều kiện cũ "start_dt - now > urgent_window" chỉ
+                    # loại được kèo CÒN XA (tương lai), nhưng bất kỳ kèo nào đã
+                    # QUA giờ (start_dt ở QUÁ KHỨ, ví dụ đã kết thúc từ lâu
+                    # nhưng chưa bị đánh dấu closed/full) sẽ cho hiệu số ÂM,
+                    # luôn nhỏ hơn urgent_window (dương) -> KHÔNG bị continue,
+                    # khiến bot cứ lết tới quán của kèo đã cũ/quá ngày. Đồng
+                    # thời đây cũng là nguồn gốc lỗi "chưa tới ngày mà user đã
+                    # tới quán": nếu server trả start_time dạng chỉ có NGÀY
+                    # (không giờ) -> parse ra 00:00, nên hễ sang ngày là coi
+                    # như "đã bắt đầu", set minutes_left âm, và lọt qua điều
+                    # kiện cũ y hệt lỗi trên dù giờ hẹn thật (tối) chưa tới.
+                    # Sửa lại cho ĐÚNG NGỮ NGHĨA "sắp diễn ra": chỉ tính là hot
+                    # khi 0 <= minutes_left <= urgent_window (giống hệt công
+                    # thức trong _invite_urgency_weight_locked ở trên).
+                    if not start_dt:
+                        continue
+                    minutes_left = (start_dt - now).total_seconds() / 60.0
+                    if not (0 <= minutes_left <= urgent_window.total_seconds() / 60.0):
                         continue
 
                 if best is None or (
@@ -1248,25 +1301,50 @@ class MapPresenceBot:
 
 def _get_invite_venue_coords(api, invite_id, token, state: SharedState):
     """
-    Lấy toạ độ quán (điểm hẹn) của 1 invite qua GET /invite/meeting-point,
-    có cache trong state để không gọi lại API mỗi lần cần check-in cho
-    cùng 1 invite. Trả về (lat, lng) hoặc None nếu invite chưa có toạ độ /
-    fetch lỗi.
+    Lấy toạ độ quán (điểm hẹn) của 1 invite.
+
+    🔧 FIX QUAN TRỌNG: trước đây gọi GET /wp-json/nhau/v1/invite/meeting-point
+    — endpoint này KHÔNG hề xuất hiện trong app thật (đối chiếu toàn bộ
+    product_detail_page.dart + shop_page.dart, không có chỗ nào gọi tới),
+    nên gần như chắc chắn 404/không tồn tại -> _get_invite_venue_coords()
+    luôn trả None -> action_update_attendance() fallback hết sang 'late'
+    thay vì 'going', và map-presence bot không bao giờ thật sự hội tụ về
+    quán (rơi về random point trong quận). Đây rất có thể là 1 phần lý do
+    hành vi map/attendance không giống thật.
+
+    App thật lấy toạ độ quán theo cách HOÀN TOÀN KHÁC: không có API riêng
+    cho "meeting point" của 1 invite — quán/địa điểm là thuộc tính của
+    PRODUCT (venueLat/venueLng đọc từ product['meta']['lat']/['lng'], xem
+    product_detail_page.dart dòng ~1292-1310, fallback quét meta_data nếu
+    'meta' không có sẵn 2 key đó). Nên giờ sửa lại: tra invite_id ->
+    product_id (đã có sẵn trong state.invite_product_id), rồi gọi
+    GET /wp-json/nhau/v1/product-lite?id={product_id} — CÙNG API app thật
+    dùng để lấy chi tiết 1 product (xem shop_page.dart dòng ~1626-1636),
+    trả {"data": {..., "meta": {"lat": ..., "lng": ..., ...}}}.
+
+    Có cache trong state để không gọi lại API mỗi lần cần check-in cho
+    cùng 1 invite. Trả về (lat, lng) hoặc None nếu chưa có toạ độ / lỗi.
     """
     with state.lock:
         cached = state.invite_venue_coords.get(invite_id)
+        product_id = state.invite_product_id.get(invite_id)
     if cached is not None:
         return cached if cached is not False else None
 
-    r = api.get("/wp-json/nhau/v1/invite/meeting-point", token=token,
-                params={"invite_id": invite_id})
     coords = None
-    if r is not None and r.status_code == 200:
-        data = safe_json(r)
-        if data and data.get("success"):
+    if product_id is not None:
+        r = api.get("/wp-json/nhau/v1/product-lite", token=token,
+                    params={"id": product_id})
+        if r is not None and r.status_code == 200:
+            data = safe_json(r)
+            item = (data or {}).get("data") or {}
+            meta = item.get("meta") or {}
             try:
-                coords = (float(data["lat"]), float(data["lng"]))
-            except (TypeError, ValueError, KeyError):
+                lat = meta.get("lat")
+                lng = meta.get("lng")
+                if lat is not None and lng is not None:
+                    coords = (float(lat), float(lng))
+            except (TypeError, ValueError):
                 coords = None
 
     with state.lock:
@@ -1315,6 +1393,23 @@ def action_update_attendance(api, cfg, users, state: SharedState):
         invite_id, user_id, stage, current = random.choices(candidates, weights=weights, k=1)[0]
     user = next((u for u in users if u.user_id == user_id), None)
     if user is None:
+        # 🔧 CHẨN ĐOÁN: đây rất có thể là lý do "host toàn không tới, chỉ
+        # member tới". Script chỉ có thể giả lập trạng thái tham dự cho các
+        # account có trong danh sách `accounts` (đã login lấy token) —
+        # nếu invite_id này lấy từ /invite/by-products (kèo có sẵn trên
+        # site, do 1 user THẬT tạo ra, không phải bot), thì host_id của nó
+        # KHÔNG nằm trong `users`, nên nhánh này luôn bị bỏ qua cho host,
+        # trong khi các member là bot vẫn cập nhật bình thường -> đúng y
+        # hiện tượng quan sát được. Muốn host cũng "tới" được thì kèo đó
+        # phải do CHÍNH 1 account trong config["accounts"] tạo (qua
+        # action_create_invite, cần product_ids khác rỗng), không thể giả
+        # cho 1 host thật không có trong danh sách account test.
+        logging.info(
+            f"[ATTENDANCE] invite_id={invite_id}: user_id={user_id} (role="
+            f"{'host' if user_id == state.invite_hosts.get(invite_id) else 'member'}) "
+            "không có trong danh sách accounts đã login -> không thể giả lập "
+            "cập nhật attendance cho user này (không có token)."
+        )
         return
 
     roll = random.random()
