@@ -192,10 +192,10 @@ DEFAULT_CHAT_FLOWS = {
             {"role": "host", "text": "Ok nha, tới cứ nhắn trong group"},
         ],
         [
-            {"role": "member", "text": "Có ai đi từ Bình Thạnh không?"},
-            {"role": "member", "text": "Mình đi từ Bình Thạnh nè"},
-            {"role": "member", "text": "Vậy đi chung không?"},
-            {"role": "member", "text": "Ok lát mình nhắn nha"},
+            {"role": "member", "text": "Có ai đi từ Bình Thạnh không?", "speaker": "m1"},
+            {"role": "member", "text": "Mình đi từ Bình Thạnh nè", "speaker": "m2"},
+            {"role": "member", "text": "Vậy đi chung không?", "speaker": "m1"},
+            {"role": "member", "text": "Ok lát mình nhắn nha", "speaker": "m2"},
         ],
         [
             {"role": "member", "text": "Có cần đặt bàn trước không?"},
@@ -212,10 +212,10 @@ DEFAULT_CHAT_FLOWS = {
     ],
     "before_start": [
         [
-            {"role": "member", "text": "Mọi người chuẩn bị đi chưa?"},
-            {"role": "member", "text": "Mình đang chuẩn bị ra nè"},
+            {"role": "member", "text": "Mọi người chuẩn bị đi chưa?", "speaker": "m1"},
+            {"role": "member", "text": "Mình đang chuẩn bị ra nè", "speaker": "m2"},
             {"role": "host", "text": "Ok nha, mình cũng sắp đi"},
-            {"role": "member", "text": "Lát tới mình báo trong group"},
+            {"role": "member", "text": "Lát tới mình báo trong group", "speaker": "m2"},
         ],
         [
             {"role": "member", "text": "5 phút nữa mình ra"},
@@ -244,10 +244,10 @@ DEFAULT_CHAT_FLOWS = {
             {"role": "host", "text": "Vô ngồi đi bạn"},
         ],
         [
-            {"role": "member", "text": "Mọi người tới chưa?"},
-            {"role": "member", "text": "Mình đang chạy qua"},
+            {"role": "member", "text": "Mọi người tới chưa?", "speaker": "m1"},
+            {"role": "member", "text": "Mình đang chạy qua", "speaker": "m2"},
             {"role": "host", "text": "Mình tới rồi nha"},
-            {"role": "member", "text": "Ok tới mình gọi"},
+            {"role": "member", "text": "Ok tới mình gọi", "speaker": "m1"},
         ],
     ],
     "during_meet": [
@@ -264,17 +264,17 @@ DEFAULT_CHAT_FLOWS = {
             {"role": "member", "text": "Dzô 🍻"},
         ],
         [
-            {"role": "member", "text": "Món này ngon nè"},
-            {"role": "member", "text": "Để mình thử coi"},
-            {"role": "member", "text": "Ngon thiệt haha"},
+            {"role": "member", "text": "Món này ngon nè", "speaker": "m1"},
+            {"role": "member", "text": "Để mình thử coi", "speaker": "m2"},
+            {"role": "member", "text": "Ngon thiệt haha", "speaker": "m2"},
             {"role": "host", "text": "Gọi thêm một phần không?"},
-            {"role": "member", "text": "Gọi thêm đi, đông người mà"},
+            {"role": "member", "text": "Gọi thêm đi, đông người mà", "speaker": "m1"},
         ],
         [
-            {"role": "member", "text": "Có ai hát karaoke không?"},
-            {"role": "member", "text": "Tí nữa tăng 2 mình hát nha haha"},
+            {"role": "member", "text": "Có ai hát karaoke không?", "speaker": "m1"},
+            {"role": "member", "text": "Tí nữa tăng 2 mình hát nha haha", "speaker": "m2"},
             {"role": "host", "text": "Kèo này có vẻ tới tăng 2 rồi"},
-            {"role": "member", "text": "Chơi luôn"},
+            {"role": "member", "text": "Chơi luôn", "speaker": "m1"},
         ],
         [
             {"role": "member", "text": "Nay ai làm chủ xị vậy?"},
@@ -285,15 +285,15 @@ DEFAULT_CHAT_FLOWS = {
     ],
     "after_meet": [
         [
-            {"role": "member", "text": "Hôm nay vui quá mọi người"},
-            {"role": "member", "text": "Haha lần đầu gặp mà vui ghê"},
-            {"role": "member", "text": "Lần sau rủ mình nữa nha"},
+            {"role": "member", "text": "Hôm nay vui quá mọi người", "speaker": "m1"},
+            {"role": "member", "text": "Haha lần đầu gặp mà vui ghê", "speaker": "m2"},
+            {"role": "member", "text": "Lần sau rủ mình nữa nha", "speaker": "m2"},
             {"role": "host", "text": "Chắc chắn rồi"},
         ],
         [
-            {"role": "member", "text": "Mọi người về tới nhà chưa?"},
-            {"role": "member", "text": "Mình về tới rồi nha"},
-            {"role": "member", "text": "Mình cũng vừa tới"},
+            {"role": "member", "text": "Mọi người về tới nhà chưa?", "speaker": "m1"},
+            {"role": "member", "text": "Mình về tới rồi nha", "speaker": "m2"},
+            {"role": "member", "text": "Mình cũng vừa tới", "speaker": "m2"},
             {"role": "host", "text": "Ok ngủ ngon nha, hẹn kèo sau"},
         ],
         [
@@ -349,7 +349,13 @@ def normalize_chat_flows(cfg):
                     role = turn.get("role", "member")
                     if role not in ("host", "member"):
                         role = "member"
-                    turns.append({"role": role, "text": str(turn["text"])})
+                    normalized_turn = {"role": role, "text": str(turn["text"])}
+                    # Giữ lại "speaker" (m1/m2...) nếu config.json có khai báo,
+                    # để speaker_map ở get_contextual_group_turn nhận diện
+                    # đúng người hỏi/người đáp thay vì luôn coi là 1 người.
+                    if turn.get("speaker"):
+                        normalized_turn["speaker"] = str(turn["speaker"])
+                    turns.append(normalized_turn)
             if turns:
                 out.append(turns)
         if out:
@@ -407,7 +413,26 @@ def get_invite_stage_locked(invite_id, state: "SharedState"):
     return "before_join"
 
 
-def choose_sender_for_role_locked(role, users, host_id, member_ids):
+def choose_sender_for_role_locked(role, users, host_id, member_ids, exclude_user_ids=None):
+    """
+    🔧 FIX "1 người tự hỏi tự trả lời" + "trả lời sai người hỏi": trước đây
+    mỗi turn chọn người gửi hoàn toàn độc lập bằng random.choice, không
+    nhớ ai đang đóng vai gì trong conversation -> vừa có thể trùng người
+    2 turn liên tiếp, vừa có thể để một người thứ 3 bất kỳ "trả lời" một
+    câu hỏi vốn đang hướng tới người khác (vd A hỏi, B đáp, nhưng câu tiếp
+    theo lẽ ra của A lại rơi vào C ngẫu nhiên).
+
+    Nay dùng cùng với speaker_map ở get_contextual_group_turn: mỗi
+    "speaker" (m1/m2) trong 1 conversation được gán CỐ ĐỊNH 1 user ngay từ
+    turn đầu tiên xuất hiện, và giữ nguyên user đó cho hết conversation.
+    Hàm này chỉ lo việc chọn user cho 1 speaker lúc gán lần đầu:
+    exclude_user_ids là các user đã được gán cho speaker KHÁC trong cùng
+    conversation, để đảm bảo m1 != m2 (không cho 2 vai khác nhau trùng
+    thành cùng 1 người) — chỉ loại khi vẫn còn candidate khác, nếu loại
+    hết thì thôi, không có lựa chọn nào khác (vd invite chỉ có 2 người).
+    """
+    exclude_user_ids = exclude_user_ids or set()
+
     if role == "host":
         candidates = [u for u in users if u.user_id == host_id]
         return random.choice(candidates) if candidates else None
@@ -415,6 +440,11 @@ def choose_sender_for_role_locked(role, users, host_id, member_ids):
     candidates = [u for u in users if u.user_id in member_ids and u.user_id != host_id]
     if not candidates:
         candidates = [u for u in users if u.user_id in member_ids]
+
+    non_repeat = [u for u in candidates if u.user_id not in exclude_user_ids]
+    if non_repeat:
+        candidates = non_repeat
+
     return random.choice(candidates) if candidates else None
 
 
@@ -457,9 +487,41 @@ def get_contextual_group_turn(cfg, users, invite_id, state: "SharedState"):
             conv = state.invite_chat_conversations[invite_id]
 
         turn = conv["turns"][conv["turn_index"]]
-        sender = choose_sender_for_role_locked(
-            turn.get("role", "member"), users, host_id, member_ids
-        )
+        role = turn.get("role", "member")
+
+        if role == "host":
+            sender = choose_sender_for_role_locked(role, users, host_id, member_ids)
+        else:
+            # 🔧 speaker_map: nhãn "speaker" (vd "m1"/"m2") trong turn dùng để
+            # phân biệt CÁC MEMBER KHÁC NHAU trong cùng 1 conversation (vd
+            # người hỏi vs người đáp). Không ghi "speaker" -> mặc định "m1"
+            # (đa số flow chỉ có 1 member nói chuyện với host xuyên suốt).
+            # Lần đầu 1 speaker_tag xuất hiện -> gán 1 user cụ thể và LƯU LẠI
+            # trong conv["speaker_map"]; các turn sau cùng speaker_tag luôn
+            # dùng lại đúng user đó -> đảm bảo hỏi-đáp đúng người, không bị
+            # người thứ 3 ngẫu nhiên chen vào giữa mạch hội thoại của 2 người.
+            speaker_map = conv.setdefault("speaker_map", {})
+            speaker_tag = turn.get("speaker", "m1")
+            assigned_id = speaker_map.get(speaker_tag)
+
+            sender = None
+            if assigned_id is not None:
+                sender = next(
+                    (u for u in users if u.user_id == assigned_id and u.user_id in member_ids),
+                    None,
+                )
+                # Nếu user đã gán không còn hợp lệ (rời invite/logout), rớt
+                # xuống nhánh gán lại bên dưới thay vì gửi sai người.
+
+            if sender is None:
+                other_assigned = {
+                    uid for tag, uid in speaker_map.items() if tag != speaker_tag
+                }
+                sender = choose_sender_for_role_locked(
+                    role, users, host_id, member_ids, exclude_user_ids=other_assigned
+                )
+                if sender is not None:
+                    speaker_map[speaker_tag] = sender.user_id
 
         if sender is None:
             # Nếu host/member không còn nằm trong danh sách login hiện tại,
