@@ -31,9 +31,27 @@ import logging
 import signal
 import threading
 import itertools
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import requests
+
+# 🔧 FIX LỆCH GIỜ: toàn bộ start_time server trả về (vd "2026-08-06
+# 12:00:00") là giờ VIỆT NAM (UTC+7) dạng string trần, không có offset.
+# Trước đây script so trực tiếp với datetime.now() — tức GIỜ HỆ THỐNG của
+# máy chạy script. Nếu máy đó không set múi giờ Asia/Ho_Chi_Minh (rất phổ
+# biến với VPS mặc định UTC), toàn bộ so sánh before_start/during_meet/
+# live/urgent-window bị lệch theo đúng số giờ chênh múi giờ -> ra đúng
+# kiểu bug "9h đã thấy 'đã tới' dù 12h trưa mới là giờ hẹn thật". Việt Nam
+# không có DST nên offset UTC+7 luôn cố định quanh năm -> dùng thẳng
+# timezone(timedelta(hours=7)) là đủ chính xác, không cần tzdata/pytz.
+_VN_TZ = timezone(timedelta(hours=7))
+
+
+def _now_vn():
+    """Giờ hiện tại theo giờ VN (naive, KHÔNG phụ thuộc múi giờ máy chạy
+    script), để so sánh trực tiếp với start_time (cũng là naive giờ VN)
+    một cách nhất quán."""
+    return datetime.now(_VN_TZ).replace(tzinfo=None)
 
 # 🆕 MAP PRESENCE: dùng để giữ WebSocket sống cho tính năng "hiện user
 # xung quanh trên map" (channel online_users:lobby bên Phoenix). Optional —
@@ -351,14 +369,24 @@ def get_invite_stage_locked(invite_id, state: "SharedState"):
     - Sau đó: after_meet
     Nếu kèo chưa có start_time: dùng số member để phân biệt sơ bộ.
     """
-    now = datetime.now()
+    now = _now_vn()
     start_dt = state.invite_start_time.get(invite_id)
 
     if state.invite_status.get(invite_id) in ("closed", "finished", "completed"):
         return "after_meet"
 
     if start_dt:
-        if now < start_dt - timedelta(minutes=30):
+        # 🔧 FIX: cửa sổ before_start cũ chỉ rộng 30 PHÚT trong khi
+        # during_meet rộng tới 24 TIẾNG (gấp 48 lần) -> vì script chạy
+        # liên tục hàng giờ, xác suất 1 lượt update_attendance rơi đúng
+        # vào 30 phút hiếm hoi đó gần như bằng 0 so với rơi vào khung 24h
+        # kia -> log gần như CHỈ BAO GIỜ thấy 'going'/'late' (during_meet),
+        # không bao giờ thấy 'on_the_way'/'not_going' (before_start) dù
+        # code ra 2 nhánh đó vẫn đúng logic, chỉ là cửa sổ để "bắt" được
+        # nó quá hẹp. Nới lên 3 tiếng cho cân đối hơn với hành vi thật
+        # (người ta hay bấm "đang tới" trước giờ hẹn khá lâu, không chỉ
+        # đúng 30 phút cuối).
+        if now < start_dt - timedelta(hours=3):
             return "after_join"
         if now < start_dt:
             return "before_start"
@@ -424,7 +452,7 @@ def get_contextual_group_turn(cfg, users, invite_id, state: "SharedState"):
                 "stage": stage,
                 "turns": turns,
                 "turn_index": 0,
-                "started_at": datetime.now(),
+                "started_at": _now_vn(),
             }
             conv = state.invite_chat_conversations[invite_id]
 
@@ -585,7 +613,7 @@ def action_create_invite(api, cfg, host: TestUser, state: SharedState):
 
     product_id = random.choice(product_ids)
     max_people = random.randint(2, 8)
-    start_dt = datetime.now() + timedelta(hours=random.randint(1, 6))
+    start_dt = _now_vn() + timedelta(hours=random.randint(1, 6))
     start_time = start_dt.strftime("%Y-%m-%d %H:%M:%S")
 
     r = api.post("/wp-json/nhau/v1/invite/create", token=host.token, json_body={
@@ -629,7 +657,7 @@ def _is_invite_live_locked(invite_id, state: SharedState):
 
     start_dt = state.invite_start_time.get(invite_id)
     if start_dt:
-        now = datetime.now()
+        now = _now_vn()
         # 🔧 FIX: đồng bộ đúng ngưỡng 24h của app thật (xem comment ở
         # get_invite_stage_locked), không phải 4h như trước.
         return start_dt <= now <= start_dt + timedelta(hours=24)
@@ -662,7 +690,7 @@ def _is_invite_closed_locked(invite_id, state: SharedState):
         return True
 
     start_dt = state.invite_start_time.get(invite_id)
-    if start_dt and datetime.now() > start_dt + timedelta(hours=24):
+    if start_dt and _now_vn() > start_dt + timedelta(hours=24):
         return True
 
     return False
@@ -713,7 +741,7 @@ def _invite_urgency_weight_locked(invite_id, state: SharedState, cfg):
     start_dt = state.invite_start_time.get(invite_id)
     if start_dt:
         urgent_window = cfg.get("invite_urgent_window_minutes", 60)
-        minutes_left = (start_dt - datetime.now()).total_seconds() / 60.0
+        minutes_left = (start_dt - _now_vn()).total_seconds() / 60.0
         if 0 <= minutes_left <= urgent_window:
             closeness = 1 - (minutes_left / urgent_window)  # 0 (còn 60') -> 1 (gần tới giờ)
             return base + closeness * (peak - base)
@@ -1064,7 +1092,7 @@ class MapPresenceBot:
         urgent_window = timedelta(
             minutes=self.cfg.get("map_presence_urgent_window_minutes", 90)
         )
-        now = datetime.now()
+        now = _now_vn()
         best, best_start = None, None
 
         with self.shared_state.lock:
