@@ -1956,6 +1956,26 @@ def worker_loop(worker_id, api, cfg, users, state: SharedState, weighted_actions
         if not infinite and round_num > num_rounds:
             break
 
+        # 🔧 JITTER RẢI REQUEST: trước đây chỉ có stagger 0-3s lúc mới KHỞI
+        # ĐỘNG worker (xem vòng lặp tạo thread ở main()), nhưng về sau các
+        # worker chạy độc lập theo human_delay() riêng của mình -> theo thời
+        # gian, "pha" (phase) của nhiều worker có thể trôi dạt và tình cờ
+        # rơi trùng gần nhau, khiến nhiều request bắn ra gần như cùng lúc
+        # (dồn cụm) dù tổng tần suất trung bình không đổi -> hay là nguyên
+        # nhân của các đợt spike CPU/timeout trên server test, dù mỗi worker
+        # riêng lẻ đã có nghỉ giữa các round. Thêm 1 khoảng jitter NGẪU NHIÊN
+        # NHỎ ngay trước khi thực hiện action của MỖI round (không chỉ lúc
+        # start) để liên tục phá vỡ mọi trùng pha phát sinh theo thời gian,
+        # dàn request đều hơn thay vì để chúng tự trôi dạt rồi dồn cụm lại.
+        # cfg["round_jitter_seconds_max"] cho phép chỉnh độ rải (mặc định 4s
+        # -> đủ để tách các request tình cờ trùng thời điểm mà không làm
+        # chậm đáng kể nhịp hoạt động tổng thể của worker).
+        jitter = random.uniform(0, cfg.get("round_jitter_seconds_max", 4))
+        if jitter > 0:
+            stop_event.wait(jitter)
+        if stop_event.is_set():
+            break
+
         action = random.choice(weighted_actions)
         user = random.choice(users)
 
